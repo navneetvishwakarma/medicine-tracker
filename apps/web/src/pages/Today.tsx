@@ -10,6 +10,7 @@ import { useSettings } from '@/hooks/useSettings'
 import { getDailySlots, getMissedDoses } from '@/domain/scheduling'
 import { useUIStore } from '@/store/useUIStore'
 import { useAuth } from '@/context/AuthContext'
+import { useAppRole } from '@/App'
 import {
   DEFAULT_SETTINGS,
   TIME_SLOTS,
@@ -180,6 +181,8 @@ export default function Today() {
   const { activeDate, setActiveDate, missedBannerDismissed, dismissMissedBanner } =
     useUIStore()
   const { user } = useAuth()
+  const { role } = useAppRole()
+  const isViewer = role === 'viewer'
   const { data: medicines = [], isError: medicinesError, isLoading } = useMedicines()
   const { data: logs = [], isError: logsError } = useDoseLogsForDate(activeDate)
   const { data: settings } = useSettings()
@@ -358,8 +361,8 @@ export default function Today() {
                   <MedicineSlotCard
                     key={`${doseSlot.medicine.id}-${doseSlot.scheduledTime}`}
                     doseSlot={doseSlot}
-                    onTap={() => handleTap(doseSlot)}
-                    onLongPress={() => setActiveSlot(doseSlot)}
+                    onTap={isViewer ? () => {} : () => handleTap(doseSlot)}
+                    onLongPress={isViewer ? () => {} : () => setActiveSlot(doseSlot)}
                   />
                 ))}
               </div>

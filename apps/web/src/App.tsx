@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { CalendarDays, Download, Pill, Settings } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { NavLink, Navigate, Outlet, RouterProvider, createBrowserRouter } from 'react-router-dom'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { NavLink, Navigate, Outlet, RouterProvider, createBrowserRouter, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { RepositoryProvider, useRepositories } from '@/context/RepositoryContext'
 import { scheduleToday } from '@/services/notifications'
@@ -10,8 +10,10 @@ import MigrationBanner from '@/components/MigrationBanner'
 import ToastStack from '@/components/ToastStack'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useRealtimeSync } from '@/hooks/useRealtimeSync'
+import { useRole, type Role } from '@/hooks/useRole'
 import AuthPage from '@/pages/Auth'
 import Export from '@/pages/Export'
+import Join from '@/pages/Join'
 import Medicines from '@/pages/Medicines'
 import SettingsPage from '@/pages/Settings'
 import Today from '@/pages/Today'
@@ -21,6 +23,36 @@ const queryClient = new QueryClient({
     queries: { staleTime: Infinity, retry: false },
   },
 })
+
+// ── Role context ──────────────────────────────────────────────────────────────
+
+const RoleContext = createContext<{ role: Role; ownerUserId: string | null }>({
+  role: 'owner',
+  ownerUserId: null,
+})
+
+export function useAppRole() {
+  return useContext(RoleContext)
+}
+
+// ── Route guard for viewer-restricted pages ───────────────────────────────────
+
+const VIEWER_BLOCKED = ['/medicines', '/settings', '/export']
+
+function ViewerGuard({ children }: { children: React.ReactNode }) {
+  const { role } = useAppRole()
+  const location = useLocation()
+  const { addToast } = useUIStore()
+
+  if (role === 'viewer' && VIEWER_BLOCKED.some((p) => location.pathname.startsWith(p))) {
+    addToast('View only — this page is not available', 'error')
+    return <Navigate to="/" replace />
+  }
+  return <>{children}</>
+}
+
+// Import here to avoid circular reference in ViewerGuard
+import { useUIStore } from '@/store/useUIStore'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Today', icon: CalendarDays, end: true },
@@ -81,6 +113,11 @@ function RealtimeWatcher() {
 }
 
 function AppLayout() {
+  const { role } = useAppRole()
+  const visibleNavItems = role === 'viewer'
+    ? NAV_ITEMS.filter((i) => i.to === '/')
+    : NAV_ITEMS
+
   return (
     <RequireAuth>
       <div className="flex flex-col min-h-dvh bg-gray-50">
@@ -90,7 +127,9 @@ function AppLayout() {
 
         <div className="flex-1 overflow-y-auto pb-[60px]">
           <ErrorBoundary>
-            <Outlet />
+            <ViewerGuard>
+              <Outlet />
+            </ViewerGuard>
           </ErrorBoundary>
         </div>
 
@@ -100,7 +139,7 @@ function AppLayout() {
           role="navigation"
           aria-label="Main navigation"
         >
-          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+          {visibleNavItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -138,6 +177,7 @@ function AppLayout() {
 
 const router = createBrowserRouter([
   { path: '/auth', element: <AuthPage /> },
+  { path: '/join', element: <Join /> },
   {
     path: '/',
     element: <AppLayout />,
@@ -152,10 +192,17 @@ const router = createBrowserRouter([
 
 function AppRoot() {
   const { user } = useAuth()
+  const { role, ownerUserId } = useRole(user?.id ?? null)
+
+  // Viewers read owner's data — pass ownerUserId so RepositoryProvider scopes correctly
+  const repoUserId = role === 'viewer' ? (ownerUserId ?? user?.id) : user?.id
+
   return (
-    <RepositoryProvider userId={user?.id}>
-      <RouterProvider router={router} />
-    </RepositoryProvider>
+    <RoleContext.Provider value={{ role, ownerUserId }}>
+      <RepositoryProvider userId={repoUserId}>
+        <RouterProvider router={router} />
+      </RepositoryProvider>
+    </RoleContext.Provider>
   )
 }
 

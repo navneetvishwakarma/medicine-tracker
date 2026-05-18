@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
 import { registerPushSubscription, sendTestNotification } from '@/services/notifications'
+import { generateInviteCode } from '@/services/inviteCode'
 import { TIME_SLOTS } from '@/types'
 import { useUIStore } from '@/store/useUIStore'
 import { useAuth } from '@/context/AuthContext'
@@ -35,6 +36,8 @@ export default function Settings() {
   const update = useUpdateSettings()
   const { addToast } = useUIStore()
   const { user } = useAuth()
+  const [inviteCode, setInviteCode] = useState<string | null>(null)
+  const [generatingCode, setGeneratingCode] = useState(false)
 
   const {
     register,
@@ -197,6 +200,65 @@ export default function Settings() {
               >
                 Send test notification
               </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Invite viewer */}
+        <section>
+          <SectionHeader>Sharing</SectionHeader>
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="px-4 py-4">
+              <p className="font-medium text-gray-900 mb-1" style={{ fontSize: 15 }}>
+                Invite a viewer
+              </p>
+              <p className="text-gray-500 mb-3" style={{ fontSize: 13 }}>
+                Share a 6-character code with a family member. They get read-only access to today's doses.
+              </p>
+              {inviteCode ? (
+                <div className="flex items-center gap-3">
+                  <span
+                    className="flex-1 text-center font-mono font-bold tracking-widest bg-gray-100 py-2.5 rounded-xl"
+                    style={{ fontSize: 20 }}
+                    aria-label={`Invite code: ${inviteCode}`}
+                  >
+                    {inviteCode}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteCode).then(() => {
+                        addToast('Code copied!', 'success')
+                      })
+                    }}
+                    className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+                    style={{ fontSize: 13 }}
+                  >
+                    Copy
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={generatingCode}
+                  onClick={async () => {
+                    if (!user?.id) return
+                    setGeneratingCode(true)
+                    try {
+                      const code = await generateInviteCode(user.id)
+                      setInviteCode(code)
+                    } catch {
+                      addToast('Failed to generate invite code', 'error')
+                    } finally {
+                      setGeneratingCode(false)
+                    }
+                  }}
+                  className="w-full py-2.5 border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  style={{ fontSize: 14 }}
+                >
+                  {generatingCode ? 'Generating…' : 'Generate invite code'}
+                </button>
+              )}
             </div>
           </div>
         </section>
