@@ -1,4 +1,61 @@
 import type { AppSettings, Medicine } from '@/types'
+import { supabase } from '@/lib/supabase'
+
+// ── Pure helpers ──────────────────────────────────────────────────────────────
+
+/** Returns true when `now` is within `windowMin` minutes after the reminder time. */
+export function isDue(reminderTime: string, now: Date, windowMin: number): boolean {
+  const [hStr, mStr] = reminderTime.split(':')
+  const slotMins = parseInt(hStr, 10) * 60 + parseInt(mStr, 10)
+  const nowMins = now.getHours() * 60 + now.getMinutes()
+  return nowMins >= slotMins && nowMins < slotMins + windowMin
+}
+
+/** Converts a base64url string to a Uint8Array (for applicationServerKey). */
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = atob(base64)
+  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)))
+}
+
+/** Converts an ArrayBuffer to a base64 string. */
+function bufferToBase64(buf: ArrayBuffer | null): string {
+  if (!buf) return ''
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+}
+
+// ── Push subscription registration ───────────────────────────────────────────
+
+export async function registerPushSubscription(userId: string): Promise<void> {
+  const reg = await navigator.serviceWorker.ready
+  let sub = await reg.pushManager.getSubscription()
+
+  if (!sub) {
+    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? ''
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKey),
+    })
+  }
+
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .upsert(
+      {
+        user_id: userId,
+        platform: 'web',
+        endpoint: sub.endpoint,
+        p256dh: bufferToBase64(sub.getKey('p256dh')),
+        auth_key: bufferToBase64(sub.getKey('auth')),
+      },
+      { onConflict: 'user_id,platform,endpoint' },
+    )
+
+  if (error) throw error
+}
+
+// ── setTimeout-based scheduler (offline / dev fallback) ──────────────────────
 
 type ScheduledNotification = { timeoutId: ReturnType<typeof setTimeout>; label: string }
 

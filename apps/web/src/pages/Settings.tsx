@@ -3,9 +3,10 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
-import { sendTestNotification } from '@/services/notifications'
+import { registerPushSubscription, sendTestNotification } from '@/services/notifications'
 import { TIME_SLOTS } from '@/types'
 import { useUIStore } from '@/store/useUIStore'
+import { useAuth } from '@/context/AuthContext'
 
 const TIME_RE = /^\d{2}:\d{2}$/
 
@@ -33,6 +34,7 @@ export default function Settings() {
   const { data: settings } = useSettings()
   const update = useUpdateSettings()
   const { addToast } = useUIStore()
+  const { user } = useAuth()
 
   const {
     register,
@@ -78,6 +80,11 @@ export default function Settings() {
       if (result === 'granted') {
         setValue('notificationsEnabled', true, { shouldDirty: true })
         addToast('Notifications enabled', 'success')
+        if (user?.id && 'serviceWorker' in navigator) {
+          registerPushSubscription(user.id).catch(() => {
+            // push subscription is best-effort; silent failure is acceptable
+          })
+        }
       } else {
         addToast('Permission denied — enable notifications in browser settings', 'error')
       }
