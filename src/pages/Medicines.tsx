@@ -39,20 +39,24 @@ export default function Medicines() {
   }
 
   return (
-    <main className="p-4 pb-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold">Medicines</h1>
+    <main className="p-4 pb-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="font-bold text-gray-900" style={{ fontSize: 24 }}>
+          Medicines
+        </h1>
         <button
           onClick={openAdd}
-          className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-700"
+          className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-2xl font-semibold hover:bg-blue-700 transition-colors"
+          style={{ fontSize: 14 }}
         >
-          <Plus size={16} />
+          <Plus size={16} strokeWidth={2.5} />
           Add
         </button>
       </div>
 
       {isError && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 mb-4">
+        <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700 mb-4">
           Failed to load medicines. Please restart the app.
         </div>
       )}
@@ -60,19 +64,24 @@ export default function Medicines() {
       {isLoading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />
+            <div key={i} className="h-[76px] bg-gray-100 rounded-2xl animate-pulse" />
           ))}
         </div>
       )}
 
-      {!isLoading && medicines.length === 0 && !isError && (
-        <div className="text-center py-16">
-          <p className="text-4xl mb-3">💊</p>
-          <p className="font-medium text-gray-700">No medicines yet</p>
-          <p className="text-sm text-gray-500 mt-1">Tap "Add" to add your first medicine.</p>
+      {!isLoading && !isError && medicines.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <p className="text-5xl mb-5">💊</p>
+          <p className="font-semibold text-gray-800" style={{ fontSize: 18 }}>
+            No medicines yet
+          </p>
+          <p className="text-gray-500 mt-2" style={{ fontSize: 14 }}>
+            Tap "Add" to add your first medicine.
+          </p>
           <button
             onClick={openAdd}
-            className="mt-4 bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+            className="mt-6 bg-blue-600 text-white px-6 py-2.5 rounded-2xl font-semibold hover:bg-blue-700 transition-colors"
+            style={{ fontSize: 14 }}
           >
             Add medicine
           </button>
@@ -100,29 +109,41 @@ export default function Medicines() {
         />
       )}
 
+      {/* Archive confirmation bottom sheet */}
       {archiveConfirmId && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          style={{ backdropFilter: 'blur(2px)' }}
           onClick={() => setArchiveConfirmId(null)}
         >
           <div
-            className="bg-white w-full max-w-md rounded-t-2xl p-6"
+            className="bg-white w-full max-w-md rounded-t-3xl pb-10"
+            style={{ boxShadow: '0 -8px 32px rgba(28,28,26,0.16)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="font-semibold text-gray-900 mb-1">Archive medicine?</p>
-            <p className="text-sm text-gray-500 mb-5">
-              It will no longer appear in daily tracking.
-            </p>
-            <div className="flex gap-3">
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-9 h-1 bg-gray-200 rounded-full" />
+            </div>
+            <div className="px-6 pt-4 pb-6">
+              <p className="font-bold text-gray-900" style={{ fontSize: 17 }}>
+                Archive medicine?
+              </p>
+              <p className="text-gray-500 mt-1.5" style={{ fontSize: 14 }}>
+                It will no longer appear in daily tracking. Dose history is preserved.
+              </p>
+            </div>
+            <div className="flex gap-3 px-4">
               <button
                 onClick={() => setArchiveConfirmId(null)}
-                className="flex-1 py-2.5 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="flex-1 py-3 border border-gray-200 rounded-2xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                style={{ fontSize: 15 }}
               >
                 Cancel
               </button>
               <button
                 onClick={confirmArchive}
-                className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
+                className="flex-1 py-3 bg-red-600 text-white rounded-2xl font-semibold hover:bg-red-700 transition-colors"
+                style={{ fontSize: 15 }}
               >
                 Archive
               </button>

@@ -33,7 +33,9 @@ function NotificationScheduler() {
       scheduleToday(meds, cfg)
     }
     reschedule()
-    const onVisible = () => { if (document.visibilityState === 'visible') reschedule() }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') reschedule()
+    }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [medicines, settings])
@@ -50,13 +52,17 @@ function AppLayout() {
     <div className="flex flex-col min-h-dvh bg-gray-50">
       <NotificationScheduler />
       <OnlineStatusWatcher />
-      <div className="flex-1 overflow-y-auto pb-20">
+
+      <div className="flex-1 overflow-y-auto pb-[60px]">
         <ErrorBoundary>
           <Outlet />
         </ErrorBoundary>
       </div>
+
+      {/* Bottom navigation */}
       <nav
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex"
+        className="fixed bottom-0 left-0 right-0 h-[60px] bg-white border-t border-gray-100 flex"
+        style={{ boxShadow: '0 -1px 0 rgba(28,28,26,0.06)' }}
         role="navigation"
         aria-label="Main navigation"
       >
@@ -66,16 +72,30 @@ function AppLayout() {
             to={to}
             end={end}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors ${
-                isActive ? 'text-blue-600' : 'text-gray-500 hover:text-gray-800'
+              `flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
+                isActive ? 'text-blue-600' : 'text-gray-400'
               }`
             }
           >
-            <Icon size={20} strokeWidth={1.75} />
-            <span>{label}</span>
+            {({ isActive }) => (
+              <>
+                <Icon
+                  size={22}
+                  strokeWidth={isActive ? 2 : 1.75}
+                  className="transition-all"
+                />
+                <span
+                  className="font-medium"
+                  style={{ fontSize: 10, letterSpacing: '0.01em' }}
+                >
+                  {label}
+                </span>
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
+
       <ToastStack />
     </div>
   )

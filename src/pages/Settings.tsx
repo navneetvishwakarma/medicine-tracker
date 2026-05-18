@@ -33,7 +33,14 @@ export default function Settings() {
   const update = useUpdateSettings()
   const { addToast } = useUIStore()
 
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isDirty } } = useForm<SettingsFormValues>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isDirty },
+  } = useForm<SettingsFormValues>({
     resolver: zodResolver(SettingsFormSchema),
     defaultValues: {
       patientName: 'Patient',
@@ -44,7 +51,6 @@ export default function Settings() {
 
   const notificationsEnabled = watch('notificationsEnabled')
 
-  // Sync loaded settings into form
   useEffect(() => {
     if (settings) {
       reset({
@@ -79,24 +85,43 @@ export default function Settings() {
     }
   }
 
-  return (
-    <main className="p-4 pb-8">
-      <h1 className="text-xl font-semibold mb-4">Settings</h1>
+  const SectionHeader = ({ children }: { children: React.ReactNode }) => (
+    <p
+      className="font-bold text-gray-400 uppercase tracking-widest px-1 mb-2"
+      style={{ fontSize: 11 }}
+    >
+      {children}
+    </p>
+  )
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Patient name */}
+  return (
+    <main className="p-4 pb-10">
+      <h1 className="font-bold text-gray-900 mb-6" style={{ fontSize: 24 }}>
+        Settings
+      </h1>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-7">
+        {/* Profile */}
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Profile</h2>
-          <div className="bg-white rounded-xl border p-4 space-y-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Your name</label>
+          <SectionHeader>Profile</SectionHeader>
+          <div
+            className="bg-white rounded-2xl overflow-hidden"
+            style={{ boxShadow: '0 1px 2px rgba(28,28,26,0.06)' }}
+          >
+            <div className="px-4 py-3.5">
+              <label className="block font-medium text-gray-700 mb-2" style={{ fontSize: 14 }}>
+                Your name
+              </label>
               <input
                 {...register('patientName')}
                 placeholder="Patient"
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                style={{ fontSize: 15 }}
               />
               {errors.patientName && (
-                <p className="text-red-500 text-xs mt-1">{errors.patientName.message}</p>
+                <p className="text-red-500 mt-1.5" style={{ fontSize: 13 }}>
+                  {errors.patientName.message}
+                </p>
               )}
             </div>
           </div>
@@ -104,15 +129,21 @@ export default function Settings() {
 
         {/* Reminder times */}
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Reminder times</h2>
-          <div className="bg-white rounded-xl border divide-y">
+          <SectionHeader>Reminder times</SectionHeader>
+          <div
+            className="bg-white rounded-2xl overflow-hidden divide-y divide-gray-100"
+            style={{ boxShadow: '0 1px 2px rgba(28,28,26,0.06)' }}
+          >
             {TIME_SLOTS.map((slot) => (
-              <div key={slot} className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm font-medium">{SLOT_LABELS[slot]}</span>
+              <div key={slot} className="flex items-center justify-between px-4 py-3.5">
+                <span className="font-medium text-gray-900" style={{ fontSize: 15 }}>
+                  {SLOT_LABELS[slot]}
+                </span>
                 <input
                   type="time"
                   {...register(`reminderTimes.${slot}` as const)}
-                  className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="border border-gray-200 bg-gray-50 rounded-xl px-3 py-1.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                  style={{ fontSize: 14 }}
                 />
               </div>
             ))}
@@ -121,12 +152,19 @@ export default function Settings() {
 
         {/* Notifications */}
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Notifications</h2>
-          <div className="bg-white rounded-xl border p-4 space-y-3">
-            <div className="flex items-center justify-between">
+          <SectionHeader>Notifications</SectionHeader>
+          <div
+            className="bg-white rounded-2xl overflow-hidden"
+            style={{ boxShadow: '0 1px 2px rgba(28,28,26,0.06)' }}
+          >
+            <div className="px-4 py-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium">Dose reminders</p>
-                <p className="text-xs text-gray-500">Requires app opened at least once daily</p>
+                <p className="font-medium text-gray-900" style={{ fontSize: 15 }}>
+                  Dose reminders
+                </p>
+                <p className="text-gray-500 mt-0.5" style={{ fontSize: 13 }}>
+                  Requires app opened at least once daily
+                </p>
               </div>
               <input
                 type="checkbox"
@@ -135,24 +173,32 @@ export default function Settings() {
                 className="w-5 h-5 accent-blue-600 cursor-pointer"
               />
             </div>
-            <button
-              type="button"
-              onClick={async () => {
-                if (Notification.permission !== 'granted') return
-                new Notification('Medicine Reminder', { body: 'Test notification — this is working!', icon: '/icons/icon-192.png' })
-              }}
-              className="w-full py-2 text-sm border rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Send test notification
-            </button>
+
+            <div className="px-4 pb-4">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (Notification.permission !== 'granted') return
+                  new Notification('Medicine Reminder', {
+                    body: 'Test notification — this is working!',
+                    icon: '/icons/icon-192.png',
+                  })
+                }}
+                className="w-full py-2.5 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                style={{ fontSize: 14 }}
+              >
+                Send test notification
+              </button>
+            </div>
           </div>
         </section>
 
-        {/* Save */}
+        {/* Save button */}
         <button
           type="submit"
           disabled={!isDirty || update.isPending}
-          className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-semibold hover:bg-blue-700 disabled:opacity-40 transition-colors"
+          style={{ fontSize: 15 }}
         >
           {update.isPending ? 'Saving…' : 'Save settings'}
         </button>

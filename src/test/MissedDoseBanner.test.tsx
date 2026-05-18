@@ -47,7 +47,8 @@ describe('MissedDoseBanner', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: /view missed/i }))
     expect(screen.getByText('Missed doses')).toBeInTheDocument()
-    expect(screen.getByText('Aspirin')).toBeInTheDocument()
+    // Banner now shows medicine name in preview AND in the sheet — both are correct
+    expect(screen.getAllByText('Aspirin').length).toBeGreaterThanOrEqual(1)
   })
 
   it('calls onAction with "taken" when Taken is clicked', () => {

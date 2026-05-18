@@ -9,35 +9,38 @@ interface Props {
 export default function DateNav({ date, onChange }: Props) {
   const parsed = parseISO(date)
   const isTodayDate = isToday(parsed)
-  const label = isTodayDate ? 'Today' : format(parsed, 'MMM d')
 
-  const prev = () => onChange(addDays(parsed, -1).toISOString().split('T')[0])
+  const prev = () => onChange(format(addDays(parsed, -1), 'yyyy-MM-dd'))
   const next = () => {
-    if (!isTodayDate) onChange(addDays(parsed, 1).toISOString().split('T')[0])
+    if (!isTodayDate) onChange(format(addDays(parsed, 1), 'yyyy-MM-dd'))
   }
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-white border-b sticky top-0 z-10">
+    <div className="sticky top-0 z-10 bg-white border-b border-gray-100 flex items-center px-1 py-2">
       <button
         onClick={prev}
-        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"
+        className="p-2.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
         aria-label="Previous day"
       >
-        <ChevronLeft size={20} />
+        <ChevronLeft size={22} strokeWidth={2} />
       </button>
-      <div className="text-center">
-        <p className="font-semibold text-gray-900">{label}</p>
-        {!isTodayDate && (
-          <p className="text-xs text-gray-400">{format(parsed, 'EEEE, MMM d yyyy')}</p>
-        )}
+
+      <div className="flex-1 text-center">
+        <p className="font-bold text-gray-900 leading-tight" style={{ fontSize: 17 }}>
+          {isTodayDate ? 'Today' : format(parsed, 'EEEE')}
+        </p>
+        <p className="text-gray-400 leading-tight mt-0.5" style={{ fontSize: 12 }}>
+          {isTodayDate ? format(parsed, 'MMMM d, yyyy') : format(parsed, 'MMMM d')}
+        </p>
       </div>
+
       <button
         onClick={next}
         disabled={isTodayDate}
-        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+        className="p-2.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
         aria-label="Next day"
       >
-        <ChevronRight size={20} />
+        <ChevronRight size={22} strokeWidth={2} />
       </button>
     </div>
   )

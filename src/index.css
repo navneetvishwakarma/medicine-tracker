@@ -1,1 +1,56 @@
 @import "tailwindcss";
+
+@theme {
+  /* ── Warm gray palette override (replaces cold Tailwind grays) ── */
+  --color-gray-50:  #F7F6F3;
+  --color-gray-100: #EFEDE8;
+  --color-gray-200: #E2E0DB;
+  --color-gray-300: #CFCDC6;
+  --color-gray-400: #A8A7A0;
+  --color-gray-500: #8A8980;
+  --color-gray-600: #6B6A62;
+  --color-gray-700: #4A4944;
+  --color-gray-800: #2E2D2A;
+  --color-gray-900: #1C1C1A;
+  --color-gray-950: #111110;
+
+  /* ── Semantic tokens ── */
+  --color-surface:         #FFFFFF;
+  --color-border:          #E8E7E2;
+  --color-border-strong:   #CFCEC8;
+
+  /* Status: taken */
+  --color-taken:           #16A34A;
+  --color-taken-surface:   #F0FDF4;
+  --color-taken-border:    #86EFAC;
+
+  /* Status: skipped */
+  --color-skipped:         #DC2626;
+  --color-skipped-surface: #FFF1F2;
+  --color-skipped-border:  #FECACA;
+
+  /* Status: warning */
+  --color-warn:            #D97706;
+  --color-warn-surface:    #FFFBEB;
+  --color-warn-border:     #FDE68A;
+}
+
+/* ── Base ── */
+body {
+  background-color: #F7F6F3;
+  color: #1C1C1A;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Remove tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth momentum scrolling on iOS */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
