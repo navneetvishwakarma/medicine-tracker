@@ -35,6 +35,9 @@ export default defineConfig({
     }),
   ],
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@medicine-tracker/core': path.resolve(__dirname, '../../packages/core/src/index.ts'),
+    },
   },
 })
