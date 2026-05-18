@@ -178,7 +178,7 @@ function MedicineSlotCard({ doseSlot, onTap, onLongPress }: SlotCardProps) {
 export default function Today() {
   const { activeDate, setActiveDate, missedBannerDismissed, dismissMissedBanner } =
     useUIStore()
-  const { data: medicines = [], isError: medicinesError } = useMedicines()
+  const { data: medicines = [], isError: medicinesError, isLoading } = useMedicines()
   const { data: logs = [], isError: logsError } = useDoseLogsForDate(activeDate)
   const { data: settings } = useSettings()
   const upsert = useUpsertDoseLog()
@@ -274,15 +274,32 @@ export default function Today() {
       />
 
       <main className="pb-8">
-        {slotGroups.length === 0 ? (
+        {isLoading && (
+          <div className="px-4 pt-6 space-y-6">
+            {[1, 2].map((g) => (
+              <div key={g}>
+                <div className="h-3 w-24 bg-gray-100 rounded-full mb-3 animate-pulse" />
+                <div className="space-y-2">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-[68px] bg-gray-100 rounded-2xl animate-pulse" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!isLoading && slotGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
             <div className="text-5xl mb-5">💊</div>
-            <p className="text-lg font-semibold text-gray-800">No medicines scheduled</p>
-            <p className="text-sm text-gray-500 mt-2 leading-relaxed max-w-xs">
+            <p className="font-semibold text-gray-800" style={{ fontSize: 18 }}>
+              No medicines scheduled
+            </p>
+            <p className="text-gray-500 mt-2 leading-relaxed max-w-xs" style={{ fontSize: 14 }}>
               Add medicines in the Medicines tab to start tracking your doses.
             </p>
           </div>
-        ) : (
+        ) : !isLoading && (
           slotGroups.map((group) => (
             <div key={group.slotName}>
               {/* Slot section header */}
