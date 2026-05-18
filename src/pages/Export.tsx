@@ -1,4 +1,4 @@
-import { format, subDays } from 'date-fns'
+import { endOfMonth, format, startOfMonth, subDays, subMonths } from 'date-fns'
 import { Download, FileSpreadsheet } from 'lucide-react'
 import { useState } from 'react'
 import { buildGridData } from '@/domain/export'
@@ -8,13 +8,35 @@ import { useSettings } from '@/hooks/useSettings'
 import { downloadExcel, downloadPDF } from '@/services/export'
 import { useUIStore } from '@/store/useUIStore'
 
-const today = () => format(new Date(), 'yyyy-MM-dd')
-const daysAgo = (n: number) => format(subDays(new Date(), n), 'yyyy-MM-dd')
-const MAX_DAYS = 14
+const MAX_DAYS = 31
+
+const todayStr = () => format(new Date(), 'yyyy-MM-dd')
+const daysAgoStr = (n: number) => format(subDays(new Date(), n), 'yyyy-MM-dd')
+
+type Preset = { label: string; from: string; to: string }
+
+function getPresets(): Preset[] {
+  const now = new Date()
+  const prevMonth = subMonths(now, 1)
+  return [
+    { label: 'Last 7', from: daysAgoStr(6), to: todayStr() },
+    { label: 'Last 30', from: daysAgoStr(29), to: todayStr() },
+    {
+      label: 'This month',
+      from: format(startOfMonth(now), 'yyyy-MM-dd'),
+      to: todayStr(),
+    },
+    {
+      label: 'Last month',
+      from: format(startOfMonth(prevMonth), 'yyyy-MM-dd'),
+      to: format(endOfMonth(prevMonth), 'yyyy-MM-dd'),
+    },
+  ]
+}
 
 export default function Export() {
-  const [from, setFrom] = useState(daysAgo(6))
-  const [to, setTo] = useState(today())
+  const [from, setFrom] = useState(daysAgoStr(6))
+  const [to, setTo] = useState(todayStr())
   const [rangeError, setRangeError] = useState('')
 
   const { data: medicines = [] } = useMedicines()
@@ -22,11 +44,20 @@ export default function Export() {
   const { data: logs = [] } = useDoseLogsForRange(from, to)
   const { addToast } = useUIStore()
 
+  const presets = getPresets()
+  const activePreset = presets.find((p) => p.from === from && p.to === to)?.label ?? null
+
   const validateRange = (f: string, t: string) => {
     const days = (new Date(t).getTime() - new Date(f).getTime()) / 86400000 + 1
     if (days < 1) return 'End date must be after start date'
     if (days > MAX_DAYS) return `Maximum range is ${MAX_DAYS} days`
     return ''
+  }
+
+  const applyPreset = (preset: Preset) => {
+    setFrom(preset.from)
+    setTo(preset.to)
+    setRangeError('')
   }
 
   const handleFromChange = (v: string) => { setFrom(v); setRangeError(validateRange(v, to)) }
@@ -75,6 +106,26 @@ export default function Export() {
           className="bg-white rounded-2xl p-4"
           style={{ boxShadow: '0 1px 2px rgba(28,28,26,0.06)' }}
         >
+          {/* Quick-select presets */}
+          <div className="flex gap-2 flex-wrap mb-4">
+            {presets.map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => applyPreset(p)}
+                className={`px-3.5 py-1.5 rounded-full font-medium transition-colors ${
+                  activePreset === p.label
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                style={{ fontSize: 13 }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Manual date pickers */}
           <div className="flex gap-3 items-end">
             <div className="flex-1">
               <label className="block text-gray-500 mb-1.5" style={{ fontSize: 13 }}>
@@ -97,7 +148,7 @@ export default function Export() {
               <input
                 type="date"
                 value={to}
-                max={today()}
+                max={todayStr()}
                 onChange={(e) => handleToChange(e.target.value)}
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
                 style={{ fontSize: 14 }}

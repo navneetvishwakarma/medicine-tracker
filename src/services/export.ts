@@ -17,14 +17,16 @@ export function downloadPDF(
     doc.text(`Period: ${from} to ${to}`, 14, 22)
 
     const dates = Object.keys(gridRows[0]?.cells ?? {})
+    const compact = dates.length > 14
+    const headers = dates.map((d) => (compact ? d.slice(8) : d.slice(5)))
 
     autoTable(doc, {
       startY: 28,
-      head: [['Medicine', 'Dosage', ...dates.map((d) => d.slice(5))]],
+      head: [['Medicine', 'Dosage', ...headers]],
       body: gridRows.map((r) => [r.medicineName, r.dosage, ...dates.map((d) => r.cells[d])]),
-      styles: { fontSize: 8, cellPadding: 2 },
+      styles: { fontSize: 8, cellPadding: compact ? 1 : 2 },
       headStyles: { fillColor: [15, 23, 42] },
-      columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 20 } },
+      columnStyles: { 0: { cellWidth: 38 }, 1: { cellWidth: compact ? 14 : 20 } },
     })
 
     doc.save(`medicine-log-${from}-${to}.pdf`)
