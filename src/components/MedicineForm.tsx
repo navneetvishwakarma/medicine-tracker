@@ -9,19 +9,54 @@ import {
   MedicineScheduleSchema,
   TIME_SLOTS,
   type Medicine,
+  type MealRelation,
   type MedicineColor,
+  type MedicineSchedule,
 } from '@/types'
 
-const FormSchema = z.object({
+// ── Dosage units ─────────────────────────────────────────────────────────────
+
+const DOSAGE_UNITS = [
+  'mg', 'mcg', 'g', 'ml', 'drops', 'IU', 'puff', 'tablet', 'capsule', '%',
+] as const
+type DosageUnit = (typeof DOSAGE_UNITS)[number]
+
+function parseDosage(dosage: string): { dosageAmount: string; dosageUnit: DosageUnit } {
+  const match = dosage.trim().match(/^(\d+(?:\.\d+)?)\s*(.+)?$/)
+  const amount = match?.[1] ?? ''
+  const rawUnit = (match?.[2] ?? '').trim()
+  const unit = DOSAGE_UNITS.find((u) => u.toLowerCase() === rawUnit.toLowerCase()) ?? 'mg'
+  return { dosageAmount: amount, dosageUnit: unit }
+}
+
+// ── Schemas & types ───────────────────────────────────────────────────────────
+
+const InternalSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
-  dosage: z.string().min(1, 'Dosage is required').max(50),
+  dosageAmount: z
+    .string()
+    .min(1, 'Amount is required')
+    .regex(/^\d+(\.\d+)?$/, 'Enter a valid number'),
+  dosageUnit: z.enum(DOSAGE_UNITS),
   mealRelation: z.enum(MEAL_RELATIONS),
   color: z.enum(MEDICINE_COLORS),
   notes: z.string().max(500).optional(),
   schedules: z.array(MedicineScheduleSchema).min(1, 'At least one time slot is required'),
 })
 
-export type FormValues = z.infer<typeof FormSchema>
+type InternalValues = z.infer<typeof InternalSchema>
+
+// FormValues is the external contract — dosage stays as a combined string
+export type FormValues = {
+  name: string
+  dosage: string
+  mealRelation: MealRelation
+  color: MedicineColor
+  notes?: string
+  schedules: MedicineSchedule[]
+}
+
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const COLOR_MAP: Record<MedicineColor, string> = {
   red: 'bg-red-500',
@@ -51,31 +86,40 @@ const DEFAULT_SLOT_HOURS: Record<string, number> = {
 const inputClass =
   'w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow'
 
+// ── Props ─────────────────────────────────────────────────────────────────────
+
 interface Props {
   initial?: Medicine
   onSubmit: (values: FormValues, id?: string) => void
   onCancel: () => void
 }
 
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function MedicineForm({ initial, onSubmit, onCancel }: Props) {
+  const parsed = initial ? parseDosage(initial.dosage) : null
+
   const {
     register,
     handleSubmit,
     watch,
     setValue,
     formState: { errors },
-  } = useForm<FormValues>({
-    resolver: zodResolver(FormSchema),
+  } = useForm<InternalValues>({
+    resolver: zodResolver(InternalSchema),
     defaultValues: initial
       ? {
           name: initial.name,
-          dosage: initial.dosage,
+          dosageAmount: parsed!.dosageAmount,
+          dosageUnit: parsed!.dosageUnit,
           mealRelation: initial.mealRelation,
           color: initial.color,
           notes: initial.notes ?? '',
           schedules: initial.schedules,
         }
       : {
+          dosageAmount: '',
+          dosageUnit: 'mg',
           mealRelation: 'none',
           color: 'blue',
           schedules: [],
@@ -114,7 +158,17 @@ export default function MedicineForm({ initial, onSubmit, onCancel }: Props) {
     }
   }, [schedules, setValue])
 
-  const submit = (values: FormValues) => onSubmit(values, initial?.id)
+  const submit = (internal: InternalValues) => {
+    const values: FormValues = {
+      name: internal.name,
+      dosage: `${internal.dosageAmount} ${internal.dosageUnit}`,
+      mealRelation: internal.mealRelation,
+      color: internal.color,
+      notes: internal.notes,
+      schedules: internal.schedules,
+    }
+    onSubmit(values, initial?.id)
+  }
 
   const FieldLabel = ({
     children,
@@ -189,13 +243,29 @@ export default function MedicineForm({ initial, onSubmit, onCancel }: Props) {
           {/* Dosage */}
           <div>
             <FieldLabel required>Dosage</FieldLabel>
-            <input
-              {...register('dosage')}
-              placeholder="e.g. 90mg"
-              className={inputClass}
-              style={{ fontSize: 15 }}
-            />
-            <FieldError message={errors.dosage?.message} />
+            <div className="flex gap-2">
+              <input
+                {...register('dosageAmount')}
+                placeholder="e.g. 90"
+                inputMode="decimal"
+                className={`${inputClass} flex-1`}
+                style={{ fontSize: 15 }}
+                aria-label="Dosage amount"
+              />
+              <select
+                {...register('dosageUnit')}
+                className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                style={{ fontSize: 15 }}
+                aria-label="Dosage unit"
+              >
+                {DOSAGE_UNITS.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <FieldError message={errors.dosageAmount?.message} />
           </div>
 
           {/* Meal relation */}
