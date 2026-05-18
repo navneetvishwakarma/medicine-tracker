@@ -1,25 +1,23 @@
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import MedicineCard from '@/components/MedicineCard'
-import MedicineForm from '@/components/MedicineForm'
+import MedicineForm, { type FormValues as MedicineFormValues } from '@/components/MedicineForm'
 import { useArchiveMedicine, useMedicines, useSaveMedicine } from '@/hooks/useMedicines'
 import type { Medicine } from '@/types'
 
 export default function Medicines() {
-  const { data: medicines = [], isLoading } = useMedicines()
+  const { data: medicines = [], isLoading, isError } = useMedicines()
   const save = useSaveMedicine()
   const archive = useArchiveMedicine()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Medicine | undefined>()
+  const [archiveConfirmId, setArchiveConfirmId] = useState<string | null>(null)
 
   const openAdd = () => { setEditing(undefined); setFormOpen(true) }
   const openEdit = (med: Medicine) => { setEditing(med); setFormOpen(true) }
   const closeForm = () => setFormOpen(false)
 
-  const handleSubmit = (
-    values: Parameters<typeof MedicineForm>[0]['onSubmit'] extends (v: infer V, id?: string) => void ? V : never,
-    id?: string,
-  ) => {
+  const handleSubmit = (values: MedicineFormValues, id?: string) => {
     const medicine: Medicine = {
       id: id ?? crypto.randomUUID(),
       name: values.name,
@@ -34,9 +32,9 @@ export default function Medicines() {
     save.mutate(medicine, { onSuccess: closeForm })
   }
 
-  const handleArchive = (id: string) => {
-    if (confirm('Archive this medicine? It will no longer appear in daily tracking.')) {
-      archive.mutate(id)
+  const confirmArchive = () => {
+    if (archiveConfirmId) {
+      archive.mutate(archiveConfirmId, { onSuccess: () => setArchiveConfirmId(null) })
     }
   }
 
@@ -53,6 +51,12 @@ export default function Medicines() {
         </button>
       </div>
 
+      {isError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 mb-4">
+          Failed to load medicines. Please restart the app.
+        </div>
+      )}
+
       {isLoading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -61,7 +65,7 @@ export default function Medicines() {
         </div>
       )}
 
-      {!isLoading && medicines.length === 0 && (
+      {!isLoading && medicines.length === 0 && !isError && (
         <div className="text-center py-16">
           <p className="text-4xl mb-3">💊</p>
           <p className="font-medium text-gray-700">No medicines yet</p>
@@ -82,7 +86,7 @@ export default function Medicines() {
               key={med.id}
               medicine={med}
               onEdit={openEdit}
-              onArchive={handleArchive}
+              onArchive={setArchiveConfirmId}
             />
           ))}
         </div>
@@ -94,6 +98,37 @@ export default function Medicines() {
           onSubmit={handleSubmit}
           onCancel={closeForm}
         />
+      )}
+
+      {archiveConfirmId && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          onClick={() => setArchiveConfirmId(null)}
+        >
+          <div
+            className="bg-white w-full max-w-md rounded-t-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="font-semibold text-gray-900 mb-1">Archive medicine?</p>
+            <p className="text-sm text-gray-500 mb-5">
+              It will no longer appear in daily tracking.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setArchiveConfirmId(null)}
+                className="flex-1 py-2.5 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmArchive}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
+              >
+                Archive
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   )

@@ -18,6 +18,7 @@ export class DexieDoseLogRepository implements IDoseLogRepository {
     await db.doseLogs.put(log)
   }
 
+  // Not part of IDoseLogRepository interface — used only for cascade cleanup
   async deleteByMedicine(medicineId: string): Promise<void> {
     await db.doseLogs.where('medicineId').equals(medicineId).delete()
   }

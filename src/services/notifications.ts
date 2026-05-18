@@ -1,80 +1,91 @@
 import type { AppSettings, Medicine } from '@/types'
 
 type ScheduledNotification = { timeoutId: ReturnType<typeof setTimeout>; label: string }
-const scheduled: ScheduledNotification[] = []
 
-export function clearScheduled() {
-  scheduled.forEach(({ timeoutId }) => clearTimeout(timeoutId))
-  scheduled.length = 0
-}
+class NotificationService {
+  private scheduled: ScheduledNotification[] = []
 
-export async function requestPermission(): Promise<NotificationPermission> {
-  if (!('Notification' in window)) return 'denied'
-  if (Notification.permission === 'granted') return 'granted'
-  return Notification.requestPermission()
-}
+  clearScheduled(): void {
+    this.scheduled.forEach(({ timeoutId }) => clearTimeout(timeoutId))
+    this.scheduled.length = 0
+  }
 
-export function computeDelayMs(hour: number, minute: number, now: Date): number | null {
-  const target = new Date(now)
-  target.setHours(hour, minute, 0, 0)
-  const diff = target.getTime() - now.getTime()
-  return diff > 0 ? diff : null
-}
+  async requestPermission(): Promise<NotificationPermission> {
+    if (!('Notification' in window)) return 'denied'
+    if (Notification.permission === 'granted') return 'granted'
+    return Notification.requestPermission()
+  }
 
-export function scheduleToday(medicines: Medicine[], settings: AppSettings, now = new Date()) {
-  clearScheduled()
-  if (Notification.permission !== 'granted' || !settings.notificationsEnabled) return
+  computeDelayMs(hour: number, minute: number, now: Date): number | null {
+    const target = new Date(now)
+    target.setHours(hour, minute, 0, 0)
+    const diff = target.getTime() - now.getTime()
+    return diff > 0 ? diff : null
+  }
 
-  const slotEntries = Object.entries(settings.reminderTimes) as [
-    keyof AppSettings['reminderTimes'],
-    string,
-  ][]
+  scheduleToday(medicines: Medicine[], settings: AppSettings, now = new Date()): void {
+    this.clearScheduled()
+    if (Notification.permission !== 'granted' || !settings.notificationsEnabled) return
 
-  for (const [slot, timeStr] of slotEntries) {
-    const [hourStr, minStr] = timeStr.split(':')
-    const hour = parseInt(hourStr, 10)
-    const minute = parseInt(minStr, 10)
+    const slotEntries = Object.entries(settings.reminderTimes) as [
+      keyof AppSettings['reminderTimes'],
+      string,
+    ][]
 
-    const dueMedicines = medicines.filter((m) =>
-      m.active && m.schedules.some((s) => s.time === slot),
-    )
-    if (dueMedicines.length === 0) continue
+    for (const [slot, timeStr] of slotEntries) {
+      const [hourStr, minStr] = timeStr.split(':')
+      const hour = parseInt(hourStr, 10)
+      const minute = parseInt(minStr, 10)
 
-    const delay = computeDelayMs(hour, minute, now)
-    if (delay === null) continue
+      const dueMedicines = medicines.filter(
+        (m) => m.active && m.schedules.some((s) => s.time === slot),
+      )
+      if (dueMedicines.length === 0) continue
 
-    const body = dueMedicines.map((m) => `${m.name} ${m.dosage}`).join(', ')
-    const label = `${slot} reminder`
+      const delay = this.computeDelayMs(hour, minute, now)
+      if (delay === null) continue
 
-    const timeoutId = setTimeout(async () => {
-      const reg = await navigator.serviceWorker?.ready
-      if (reg) {
-        reg.showNotification('Medicine Reminder', {
-          body,
-          icon: '/icons/icon-192.png',
-          badge: '/icons/icon-192.png',
-          tag: `reminder-${slot}`,
-        })
-      } else {
-        new Notification('Medicine Reminder', { body })
-      }
-    }, delay)
+      const body = dueMedicines.map((m) => `${m.name} ${m.dosage}`).join(', ')
+      const label = `${slot} reminder`
 
-    scheduled.push({ timeoutId, label })
+      const timeoutId = setTimeout(async () => {
+        const reg = await navigator.serviceWorker?.ready
+        if (reg) {
+          reg.showNotification('Medicine Reminder', {
+            body,
+            icon: '/icons/icon-192.png',
+            badge: '/icons/icon-192.png',
+            tag: `reminder-${slot}`,
+          })
+        } else {
+          new Notification('Medicine Reminder', { body })
+        }
+      }, delay)
+
+      this.scheduled.push({ timeoutId, label })
+    }
+  }
+
+  async sendTestNotification(): Promise<void> {
+    if (Notification.permission !== 'granted') return
+    const reg = await navigator.serviceWorker?.ready.catch(() => null)
+    const body = 'Medicine Reminder is working!'
+    if (reg) {
+      reg.showNotification('Test Notification', {
+        body,
+        icon: '/icons/icon-192.png',
+        tag: 'test',
+      })
+    } else {
+      new Notification('Test Notification', { body })
+    }
   }
 }
 
-export async function sendTestNotification() {
-  if (Notification.permission !== 'granted') return
-  const reg = await navigator.serviceWorker?.ready.catch(() => null)
-  const body = 'Medicine Reminder is working!'
-  if (reg) {
-    reg.showNotification('Test Notification', {
-      body,
-      icon: '/icons/icon-192.png',
-      tag: 'test',
-    })
-  } else {
-    new Notification('Test Notification', { body })
-  }
-}
+const _service = new NotificationService()
+
+export const clearScheduled = _service.clearScheduled.bind(_service)
+export const requestPermission = _service.requestPermission.bind(_service)
+export const computeDelayMs = _service.computeDelayMs.bind(_service)
+export const scheduleToday = _service.scheduleToday.bind(_service)
+export const sendTestNotification = _service.sendTestNotification.bind(_service)

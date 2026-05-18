@@ -40,6 +40,6 @@ export const useUIStore = create<UIState>((set) => ({
   removeToast: (id) =>
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 
-  isOnline: navigator.onLine,
+  isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
   setOnline: (isOnline) => set({ isOnline }),
 }))

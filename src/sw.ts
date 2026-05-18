@@ -13,7 +13,14 @@ registerRoute(
   new NavigationRoute(
     ({ request }) =>
       fetch(request).catch(() =>
-        caches.match('/index.html').then((r) => r ?? new Response('', { status: 500 }))
+        caches.match('/index.html').then(
+          (r) =>
+            r ??
+            new Response(
+              '<!DOCTYPE html><html><body><p>You are offline. Open the app while connected to cache it.</p></body></html>',
+              { status: 200, headers: { 'Content-Type': 'text/html' } },
+            ),
+        ),
       ),
   ),
 )

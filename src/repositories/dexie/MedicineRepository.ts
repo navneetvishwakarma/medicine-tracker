@@ -4,8 +4,7 @@ import { db } from './db'
 
 export class DexieMedicineRepository implements IMedicineRepository {
   async getAll(): Promise<Medicine[]> {
-    const all = await db.medicines.toArray()
-    return all.filter((m) => m.active)
+    return db.medicines.filter((m) => m.active).toArray()
   }
 
   async getById(id: string): Promise<Medicine | undefined> {

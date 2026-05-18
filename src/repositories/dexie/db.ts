@@ -13,6 +13,12 @@ class MedicineTrackerDB extends Dexie {
       doseLogs: '&id, [medicineId+scheduledDate], scheduledDate',
       settings: '&id',
     })
+    // v2: add standalone medicineId index so deleteByMedicine uses an index, not a full scan
+    this.version(2).stores({
+      medicines: '&id, active',
+      doseLogs: '&id, medicineId, [medicineId+scheduledDate], scheduledDate',
+      settings: '&id',
+    })
   }
 }
 

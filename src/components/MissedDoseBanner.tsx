@@ -20,7 +20,9 @@ export default function MissedDoseBanner({ missedLogs, onAction, onDismiss, getM
       <div
         className="mx-4 mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3 cursor-pointer"
         onClick={() => setSheetOpen(true)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSheetOpen(true) } }}
         role="button"
+        tabIndex={0}
         aria-label="View missed doses"
       >
         <AlertCircle size={18} className="text-amber-600 shrink-0" />

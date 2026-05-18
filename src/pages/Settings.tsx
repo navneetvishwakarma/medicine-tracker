@@ -33,7 +33,7 @@ export default function Settings() {
   const update = useUpdateSettings()
   const { addToast } = useUIStore()
 
-  const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<SettingsFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isDirty } } = useForm<SettingsFormValues>({
     resolver: zodResolver(SettingsFormSchema),
     defaultValues: {
       patientName: 'Patient',
@@ -41,6 +41,8 @@ export default function Settings() {
       notificationsEnabled: false,
     },
   })
+
+  const notificationsEnabled = watch('notificationsEnabled')
 
   // Sync loaded settings into form
   useEffect(() => {
@@ -59,17 +61,21 @@ export default function Settings() {
     })
   }
 
-  const requestNotificationPermission = async () => {
-    if (!('Notification' in window)) {
-      addToast('Notifications not supported on this device', 'error')
-      return
-    }
-    const result = await Notification.requestPermission()
-    if (result === 'granted') {
-      update.mutate({ notificationsEnabled: true })
-      addToast('Notifications enabled', 'success')
+  const handleNotificationToggle = async (checked: boolean) => {
+    if (checked) {
+      if (!('Notification' in window)) {
+        addToast('Notifications not supported on this device', 'error')
+        return
+      }
+      const result = await Notification.requestPermission()
+      if (result === 'granted') {
+        setValue('notificationsEnabled', true, { shouldDirty: true })
+        addToast('Notifications enabled', 'success')
+      } else {
+        addToast('Permission denied — enable notifications in browser settings', 'error')
+      }
     } else {
-      addToast('Permission denied — enable notifications in browser settings', 'error')
+      setValue('notificationsEnabled', false, { shouldDirty: true })
     }
   }
 
@@ -124,8 +130,8 @@ export default function Settings() {
               </div>
               <input
                 type="checkbox"
-                {...register('notificationsEnabled')}
-                onClick={requestNotificationPermission}
+                checked={notificationsEnabled}
+                onChange={(e) => handleNotificationToggle(e.target.checked)}
                 className="w-5 h-5 accent-blue-600 cursor-pointer"
               />
             </div>

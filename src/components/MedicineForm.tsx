@@ -21,7 +21,7 @@ const FormSchema = z.object({
   schedules: z.array(MedicineScheduleSchema).min(1, 'At least one time slot is required'),
 })
 
-type FormValues = z.infer<typeof FormSchema>
+export type FormValues = z.infer<typeof FormSchema>
 
 const COLOR_MAP: Record<MedicineColor, string> = {
   red: 'bg-red-500',

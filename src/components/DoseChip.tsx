@@ -59,6 +59,7 @@ export default function DoseChip({ slot, log, onTap, onLongPress }: Props) {
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerLeave}
+      onPointerCancel={handlePointerLeave}
       className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl border text-xs font-medium gap-1 select-none transition-colors ${STATUS_STYLES[status]}`}
       aria-label={`${SLOT_LABEL[slot]}: ${status}`}
       data-testid={`dose-chip-${slot}`}

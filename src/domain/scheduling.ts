@@ -28,6 +28,7 @@ export function getMissedDoses(logs: DoseLog[], asOf: Date): DoseLog[] {
   return logs.filter((l) => l.status === 'pending' && l.scheduledDate < today)
 }
 
+// Phase 3: used by analytics dashboard
 export function getAdherence(logs: DoseLog[], from: string, to: string): number {
   const inRange = logs.filter((l) => l.scheduledDate >= from && l.scheduledDate <= to)
   if (inRange.length === 0) return 0

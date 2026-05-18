@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import DateNav from '@/components/DateNav'
 import DoseActionModal from '@/components/DoseActionModal'
 import DoseRow from '@/components/DoseRow'
@@ -12,10 +12,17 @@ import type { DoseLog, DoseSlot } from '@/types'
 
 export default function Today() {
   const { activeDate, setActiveDate, missedBannerDismissed, dismissMissedBanner } = useUIStore()
-  const { data: medicines = [] } = useMedicines()
-  const { data: logs = [] } = useDoseLogsForDate(activeDate)
-  const past7Start = format(subDays(new Date(), 7), 'yyyy-MM-dd')
-  const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd')
+  const { data: medicines = [], isError: medicinesError } = useMedicines()
+  const { data: logs = [], isError: logsError } = useDoseLogsForDate(activeDate)
+
+  const { past7Start, yesterday } = useMemo(
+    () => ({
+      past7Start: format(subDays(new Date(), 7), 'yyyy-MM-dd'),
+      yesterday: format(subDays(new Date(), 1), 'yyyy-MM-dd'),
+    }),
+    [],
+  )
+
   const { data: pastLogs = [] } = useDoseLogsForRange(past7Start, yesterday)
   const upsert = useUpsertDoseLog()
   const [activeSlot, setActiveSlot] = useState<DoseSlot | null>(null)
@@ -68,6 +75,12 @@ export default function Today() {
   return (
     <div>
       <DateNav date={activeDate} onChange={setActiveDate} />
+
+      {(medicinesError || logsError) && (
+        <div className="mx-4 mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          Failed to load data. Please restart the app.
+        </div>
+      )}
 
       <MissedDoseBanner
         missedLogs={missedDoses}

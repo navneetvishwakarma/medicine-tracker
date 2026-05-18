@@ -11,7 +11,7 @@ export interface IDoseLogRepository {
   getByDate(date: string): Promise<DoseLog[]>
   getByRange(from: string, to: string): Promise<DoseLog[]>
   upsert(log: DoseLog): Promise<void>
-  deleteByMedicine(medicineId: string): Promise<void>
+  // deleteByMedicine intentionally omitted — internal utility, not a cross-cutting concern
 }
 
 export interface ISettingsRepository {

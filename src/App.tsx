@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { NavLink, Outlet, RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { RepositoryProvider, useRepositories } from '@/context/RepositoryContext'
 import { scheduleToday } from '@/services/notifications'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import ToastStack from '@/components/ToastStack'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import Export from '@/pages/Export'
@@ -13,7 +14,7 @@ import Today from '@/pages/Today'
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 1000 * 60, retry: false },
+    queries: { staleTime: Infinity, retry: false },
   },
 })
 
@@ -50,7 +51,9 @@ function AppLayout() {
       <NotificationScheduler />
       <OnlineStatusWatcher />
       <div className="flex-1 overflow-y-auto pb-20">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </div>
       <nav
         className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex"
