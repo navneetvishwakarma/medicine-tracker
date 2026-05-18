@@ -2,18 +2,26 @@ import { useState } from 'react'
 import DateNav from '@/components/DateNav'
 import DoseActionModal from '@/components/DoseActionModal'
 import DoseRow from '@/components/DoseRow'
-import { useDoseLogsForDate, useUpsertDoseLog } from '@/hooks/useDoseLogs'
+import MissedDoseBanner from '@/components/MissedDoseBanner'
+import { useDoseLogsForDate, useDoseLogsForRange, useUpsertDoseLog } from '@/hooks/useDoseLogs'
 import { useMedicines } from '@/hooks/useMedicines'
-import { getDailySlots } from '@/domain/scheduling'
+import { getDailySlots, getMissedDoses } from '@/domain/scheduling'
 import { useUIStore } from '@/store/useUIStore'
+import { format, subDays } from 'date-fns'
 import type { DoseLog, DoseSlot } from '@/types'
 
 export default function Today() {
-  const { activeDate, setActiveDate } = useUIStore()
+  const { activeDate, setActiveDate, missedBannerDismissed, dismissMissedBanner } = useUIStore()
   const { data: medicines = [] } = useMedicines()
   const { data: logs = [] } = useDoseLogsForDate(activeDate)
+  const past7Start = format(subDays(new Date(), 7), 'yyyy-MM-dd')
+  const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd')
+  const { data: pastLogs = [] } = useDoseLogsForRange(past7Start, yesterday)
   const upsert = useUpsertDoseLog()
   const [activeSlot, setActiveSlot] = useState<DoseSlot | null>(null)
+
+  const missedDoses = missedBannerDismissed ? [] : getMissedDoses(pastLogs, new Date())
+  const medicineNameMap = Object.fromEntries(medicines.map((m) => [m.id, m.name]))
 
   const slots = getDailySlots(medicines, activeDate, logs)
 
@@ -60,6 +68,15 @@ export default function Today() {
   return (
     <div>
       <DateNav date={activeDate} onChange={setActiveDate} />
+
+      <MissedDoseBanner
+        missedLogs={missedDoses}
+        onAction={(log, status) =>
+          upsert.mutate({ ...log, status, markedAt: new Date().toISOString() })
+        }
+        onDismiss={dismissMissedBanner}
+        getMedicineName={(id) => medicineNameMap[id] ?? 'Unknown'}
+      />
 
       <main className="p-4 pb-6 space-y-3">
         {byMedicine.length === 0 && (
