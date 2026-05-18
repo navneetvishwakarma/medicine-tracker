@@ -48,6 +48,9 @@ const DEFAULT_SLOT_HOURS: Record<string, number> = {
   night: 21,
 }
 
+const inputClass =
+  'w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow'
+
 interface Props {
   initial?: Medicine
   onSubmit: (values: FormValues, id?: string) => void
@@ -85,11 +88,7 @@ export default function MedicineForm({ initial, onSubmit, onCancel }: Props) {
   const toggleSlot = (slot: (typeof TIME_SLOTS)[number]) => {
     const exists = schedules.find((s) => s.time === slot)
     if (exists) {
-      setValue(
-        'schedules',
-        schedules.filter((s) => s.time !== slot),
-        { shouldValidate: true },
-      )
+      setValue('schedules', schedules.filter((s) => s.time !== slot), { shouldValidate: true })
     } else {
       setValue(
         'schedules',
@@ -100,16 +99,15 @@ export default function MedicineForm({ initial, onSubmit, onCancel }: Props) {
   }
 
   const updateSlotTime = (slot: string, hour: number, minute: number) => {
-    setValue(
-      'schedules',
-      schedules.map((s) => (s.time === slot ? { ...s, hour, minute } : s)),
-    )
+    setValue('schedules', schedules.map((s) => (s.time === slot ? { ...s, hour, minute } : s)))
   }
 
   useEffect(() => {
-    // keep schedules sorted by slot order
     if (schedules.length > 1) {
-      const order = TIME_SLOTS.reduce<Record<string, number>>((acc, s, i) => ({ ...acc, [s]: i }), {})
+      const order = TIME_SLOTS.reduce<Record<string, number>>(
+        (acc, s, i) => ({ ...acc, [s]: i }),
+        {},
+      )
       const sorted = [...schedules].sort((a, b) => order[a.time] - order[b.time])
       const changed = sorted.some((s, i) => s.time !== schedules[i].time)
       if (changed) setValue('schedules', sorted)
@@ -118,50 +116,95 @@ export default function MedicineForm({ initial, onSubmit, onCancel }: Props) {
 
   const submit = (values: FormValues) => onSubmit(values, initial?.id)
 
+  const FieldLabel = ({
+    children,
+    required,
+  }: {
+    children: React.ReactNode
+    required?: boolean
+  }) => (
+    <label
+      className="block font-medium text-gray-700 mb-1.5"
+      style={{ fontSize: 14 }}
+    >
+      {children}
+      {required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
+  )
+
+  const FieldError = ({ message }: { message?: string }) =>
+    message ? (
+      <p className="text-red-500 mt-1.5" style={{ fontSize: 13 }}>
+        {message}
+      </p>
+    ) : null
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
-      <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[90dvh] overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
+      style={{ backdropFilter: 'blur(2px)' }}
+    >
+      <div
+        className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[92dvh] flex flex-col"
+        style={{ boxShadow: '0 -8px 32px rgba(28,28,26,0.16)' }}
+      >
+        {/* Drag handle (mobile) */}
+        <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
+          <div className="w-9 h-1 bg-gray-200 rounded-full" />
+        </div>
+
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
-          <h2 className="font-semibold text-lg">{initial ? 'Edit Medicine' : 'Add Medicine'}</h2>
-          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-gray-100" aria-label="Close">
+        <div
+          className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0"
+        >
+          <h2 className="font-bold text-gray-900" style={{ fontSize: 17 }}>
+            {initial ? 'Edit Medicine' : 'Add Medicine'}
+          </h2>
+          <button
+            onClick={onCancel}
+            className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            aria-label="Close"
+          >
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(submit)} className="p-4 space-y-4">
+        {/* Scrollable form body */}
+        <form
+          onSubmit={handleSubmit(submit)}
+          className="overflow-y-auto flex-1 px-5 py-5 space-y-5"
+        >
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Medicine name <span className="text-red-500">*</span>
-            </label>
+            <FieldLabel required>Medicine name</FieldLabel>
             <input
               {...register('name')}
               placeholder="e.g. BRILINTA 90"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
+              style={{ fontSize: 15 }}
             />
-            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+            <FieldError message={errors.name?.message} />
           </div>
 
           {/* Dosage */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Dosage <span className="text-red-500">*</span>
-            </label>
+            <FieldLabel required>Dosage</FieldLabel>
             <input
               {...register('dosage')}
               placeholder="e.g. 90mg"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
+              style={{ fontSize: 15 }}
             />
-            {errors.dosage && <p className="text-red-500 text-xs mt-1">{errors.dosage.message}</p>}
+            <FieldError message={errors.dosage?.message} />
           </div>
 
           {/* Meal relation */}
           <div>
-            <label className="block text-sm font-medium mb-1">With meals</label>
+            <FieldLabel>With meals</FieldLabel>
             <select
               {...register('mealRelation')}
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
+              style={{ fontSize: 15 }}
             >
               {MEAL_RELATIONS.map((r) => (
                 <option key={r} value={r}>
@@ -173,9 +216,7 @@ export default function MedicineForm({ initial, onSubmit, onCancel }: Props) {
 
           {/* Time slots */}
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Schedule <span className="text-red-500">*</span>
-            </label>
+            <FieldLabel required>Schedule</FieldLabel>
             <div className="space-y-2">
               {TIME_SLOTS.map((slot) => {
                 const active = schedules.find((s) => s.time === slot)
@@ -184,11 +225,12 @@ export default function MedicineForm({ initial, onSubmit, onCancel }: Props) {
                     <button
                       type="button"
                       onClick={() => toggleSlot(slot)}
-                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${
+                      className={`flex-1 py-2.5 px-4 rounded-xl font-semibold border transition-colors ${
                         active
-                          ? 'bg-blue-50 border-blue-500 text-blue-700'
+                          ? 'bg-blue-50 border-blue-400 text-blue-700'
                           : 'bg-gray-50 border-gray-200 text-gray-500'
                       }`}
+                      style={{ fontSize: 14 }}
                     >
                       {SLOT_LABELS[slot]}
                     </button>
@@ -200,29 +242,30 @@ export default function MedicineForm({ initial, onSubmit, onCancel }: Props) {
                           const [h, m] = e.target.value.split(':').map(Number)
                           updateSlotTime(slot, h, m)
                         }}
-                        className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                        style={{ fontSize: 14 }}
                       />
                     )}
                   </div>
                 )
               })}
             </div>
-            {errors.schedules && (
-              <p className="text-red-500 text-xs mt-1">{errors.schedules.message}</p>
-            )}
+            <FieldError message={errors.schedules?.message} />
           </div>
 
           {/* Color */}
           <div>
-            <label className="block text-sm font-medium mb-2">Color</label>
-            <div className="flex gap-2 flex-wrap">
+            <FieldLabel>Color</FieldLabel>
+            <div className="flex gap-2.5 flex-wrap">
               {MEDICINE_COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setValue('color', c)}
-                  className={`w-8 h-8 rounded-full ${COLOR_MAP[c]} ${
-                    selectedColor === c ? 'ring-2 ring-offset-2 ring-gray-700' : ''
+                  className={`w-9 h-9 rounded-full transition-transform ${COLOR_MAP[c]} ${
+                    selectedColor === c
+                      ? 'ring-2 ring-offset-2 ring-gray-800 scale-110'
+                      : 'hover:scale-105'
                   }`}
                   aria-label={c}
                 />
@@ -232,27 +275,30 @@ export default function MedicineForm({ initial, onSubmit, onCancel }: Props) {
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium mb-1">Notes (optional)</label>
+            <FieldLabel>Notes</FieldLabel>
             <textarea
               {...register('notes')}
               rows={2}
               placeholder="Any instructions or reminders…"
-              className="w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`${inputClass} resize-none`}
+              style={{ fontSize: 15 }}
             />
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-3 pt-1 pb-2">
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 py-2.5 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="flex-1 py-3 border border-gray-200 rounded-2xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              style={{ fontSize: 15 }}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              className="flex-1 py-3 bg-blue-600 text-white rounded-2xl font-semibold hover:bg-blue-700 transition-colors"
+              style={{ fontSize: 15 }}
             >
               {initial ? 'Save changes' : 'Add medicine'}
             </button>
