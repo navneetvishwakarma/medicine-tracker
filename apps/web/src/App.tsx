@@ -131,13 +131,20 @@ const router = createBrowserRouter([
   },
 ])
 
+function AppRoot() {
+  const { user } = useAuth()
+  return (
+    <RepositoryProvider userId={user?.id}>
+      <RouterProvider router={router} />
+    </RepositoryProvider>
+  )
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RepositoryProvider>
-          <RouterProvider router={router} />
-        </RepositoryProvider>
+        <AppRoot />
       </AuthProvider>
     </QueryClientProvider>
   )
