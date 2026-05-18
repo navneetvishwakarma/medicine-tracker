@@ -44,7 +44,7 @@ export const DoseLogSchema = z.object({
   scheduledTime: z.enum(TIME_SLOTS),
   status: z.enum(DOSE_STATUSES),
   markedAt: z.string().datetime().optional(),
-  // markedBy: Phase 3 — caretaker multi-user support
+  markedBy: z.string().optional(),
   note: z.string().max(200).optional(),
 })
 

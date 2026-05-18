@@ -9,6 +9,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import MigrationBanner from '@/components/MigrationBanner'
 import ToastStack from '@/components/ToastStack'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { useRealtimeSync } from '@/hooks/useRealtimeSync'
 import AuthPage from '@/pages/Auth'
 import Export from '@/pages/Export'
 import Medicines from '@/pages/Medicines'
@@ -73,12 +74,19 @@ function OnlineStatusWatcher() {
   return null
 }
 
+function RealtimeWatcher() {
+  const { user } = useAuth()
+  useRealtimeSync(user?.id ?? null, queryClient)
+  return null
+}
+
 function AppLayout() {
   return (
     <RequireAuth>
       <div className="flex flex-col min-h-dvh bg-gray-50">
         <NotificationScheduler />
         <OnlineStatusWatcher />
+        <RealtimeWatcher />
 
         <div className="flex-1 overflow-y-auto pb-[60px]">
           <ErrorBoundary>

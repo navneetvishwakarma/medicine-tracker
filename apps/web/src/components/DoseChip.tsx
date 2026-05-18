@@ -39,6 +39,12 @@ function formatTime(hour?: number, minute?: number): string | null {
   return m === 0 ? `${h12} ${period}` : `${h12}:${String(m).padStart(2, '0')} ${period}`
 }
 
+function getInitials(markedBy: string): string {
+  const parts = markedBy.trim().split(/[\s@.]+/).filter(Boolean)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return markedBy.slice(0, 2).toUpperCase()
+}
+
 export default function DoseChip({
   slot,
   log,
@@ -51,6 +57,7 @@ export default function DoseChip({
   const status: DoseStatus = log?.status ?? 'pending'
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const timeLabel = formatTime(hour, minute)
+  const showInitials = (status === 'taken' || status === 'skipped') && log?.markedBy
 
   const handlePointerDown = () => {
     timerRef.current = setTimeout(() => {
@@ -73,26 +80,37 @@ export default function DoseChip({
   }
 
   return (
-    <button
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerCancel}
-      onPointerCancel={handlePointerCancel}
-      className={`flex flex-col items-center justify-center w-16 h-16 rounded-2xl gap-1 select-none transition-colors ${STATUS_STYLES[status]} ${
-        isCurrent ? 'ring-2 ring-blue-500 ring-offset-1' : ''
-      }`}
-      aria-label={`${SLOT_LABEL[slot]}: ${status}`}
-      data-testid={`dose-chip-${slot}`}
-    >
-      {STATUS_ICON[status]}
-      <span className="font-semibold leading-none" style={{ fontSize: 11 }}>
-        {SLOT_LABEL[slot]}
-      </span>
-      {timeLabel && (
-        <span className="leading-none text-current opacity-70" style={{ fontSize: 9 }}>
-          {timeLabel}
+    <div className="relative inline-block">
+      <button
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerCancel}
+        onPointerCancel={handlePointerCancel}
+        className={`flex flex-col items-center justify-center w-16 h-16 rounded-2xl gap-1 select-none transition-colors ${STATUS_STYLES[status]} ${
+          isCurrent ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+        }`}
+        aria-label={`${SLOT_LABEL[slot]}: ${status}${log?.markedBy ? ` by ${log.markedBy}` : ''}`}
+        data-testid={`dose-chip-${slot}`}
+      >
+        {STATUS_ICON[status]}
+        <span className="font-semibold leading-none" style={{ fontSize: 11 }}>
+          {SLOT_LABEL[slot]}
+        </span>
+        {timeLabel && (
+          <span className="leading-none text-current opacity-70" style={{ fontSize: 9 }}>
+            {timeLabel}
+          </span>
+        )}
+      </button>
+      {showInitials && (
+        <span
+          className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 rounded-full bg-white border border-gray-200 text-gray-600 font-semibold shadow-sm"
+          style={{ fontSize: 8 }}
+          aria-hidden
+        >
+          {getInitials(log!.markedBy!)}
         </span>
       )}
-    </button>
+    </div>
   )
 }

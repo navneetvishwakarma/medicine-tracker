@@ -9,6 +9,7 @@ import { useMedicines } from '@/hooks/useMedicines'
 import { useSettings } from '@/hooks/useSettings'
 import { getDailySlots, getMissedDoses } from '@/domain/scheduling'
 import { useUIStore } from '@/store/useUIStore'
+import { useAuth } from '@/context/AuthContext'
 import {
   DEFAULT_SETTINGS,
   TIME_SLOTS,
@@ -178,11 +179,15 @@ function MedicineSlotCard({ doseSlot, onTap, onLongPress }: SlotCardProps) {
 export default function Today() {
   const { activeDate, setActiveDate, missedBannerDismissed, dismissMissedBanner } =
     useUIStore()
+  const { user } = useAuth()
   const { data: medicines = [], isError: medicinesError, isLoading } = useMedicines()
   const { data: logs = [], isError: logsError } = useDoseLogsForDate(activeDate)
   const { data: settings } = useSettings()
   const upsert = useUpsertDoseLog()
   const [activeSlot, setActiveSlot] = useState<DoseSlot | null>(null)
+  const [confirmSlot, setConfirmSlot] = useState<DoseSlot | null>(null)
+
+  const currentUserLabel = user?.user_metadata?.full_name ?? user?.email ?? 'User'
 
   const { past7Start, yesterday } = useMemo(
     () => ({
@@ -220,12 +225,27 @@ export default function Today() {
 
   const handleTap = (slot: DoseSlot) => {
     const currentStatus = slot.log?.status ?? 'pending'
+    // If already marked by someone else, ask for confirmation before overwriting
+    if (
+      currentStatus === 'taken' &&
+      slot.log?.markedBy &&
+      slot.log.markedBy !== currentUserLabel
+    ) {
+      setConfirmSlot(slot)
+      return
+    }
+    applyTap(slot)
+  }
+
+  const applyTap = (slot: DoseSlot) => {
+    const currentStatus = slot.log?.status ?? 'pending'
     const newStatus = currentStatus === 'taken' ? 'pending' : 'taken'
     const log: DoseLog = slot.log
       ? {
           ...slot.log,
           status: newStatus,
           markedAt: newStatus === 'taken' ? new Date().toISOString() : undefined,
+          markedBy: newStatus === 'taken' ? currentUserLabel : undefined,
         }
       : {
           id: crypto.randomUUID(),
@@ -234,6 +254,7 @@ export default function Today() {
           scheduledTime: slot.scheduledTime,
           status: newStatus,
           markedAt: newStatus === 'taken' ? new Date().toISOString() : undefined,
+          markedBy: newStatus === 'taken' ? currentUserLabel : undefined,
         }
     upsert.mutate(log)
   }
@@ -241,7 +262,7 @@ export default function Today() {
   const handleAction = (status: 'taken' | 'skipped', note?: string) => {
     if (!activeSlot) return
     const log: DoseLog = activeSlot.log
-      ? { ...activeSlot.log, status, markedAt: new Date().toISOString(), note }
+      ? { ...activeSlot.log, status, markedAt: new Date().toISOString(), markedBy: currentUserLabel, note }
       : {
           id: crypto.randomUUID(),
           medicineId: activeSlot.medicine.id,
@@ -249,6 +270,7 @@ export default function Today() {
           scheduledTime: activeSlot.scheduledTime,
           status,
           markedAt: new Date().toISOString(),
+          markedBy: currentUserLabel,
           note,
         }
     upsert.mutate(log, { onSuccess: () => setActiveSlot(null) })
@@ -352,6 +374,44 @@ export default function Today() {
           onAction={handleAction}
           onClose={() => setActiveSlot(null)}
         />
+      )}
+
+      {confirmSlot && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Confirm override"
+        >
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-xl">
+            <p className="font-semibold text-gray-900 mb-1" style={{ fontSize: 16 }}>
+              Already marked by {confirmSlot.log?.markedBy}
+            </p>
+            <p className="text-gray-500 mb-5" style={{ fontSize: 14 }}>
+              This dose was already marked taken by {confirmSlot.log?.markedBy}. Do you
+              want to override it?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  applyTap(confirmSlot)
+                  setConfirmSlot(null)
+                }}
+                className="flex-1 py-3 bg-blue-600 text-white rounded-2xl font-semibold hover:bg-blue-700 transition-colors"
+                style={{ fontSize: 15 }}
+              >
+                Override
+              </button>
+              <button
+                onClick={() => setConfirmSlot(null)}
+                className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-2xl font-semibold hover:bg-gray-200 transition-colors"
+                style={{ fontSize: 15 }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

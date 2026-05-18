@@ -22,6 +22,7 @@ function toDoseLog(row: DbDoseLog): DoseLog {
     scheduledTime: row.scheduled_time as TimeSlot,
     status: row.status as DoseStatus,
     markedAt: row.marked_at ?? undefined,
+    markedBy: row.marked_by ?? undefined,
     note: row.note ?? undefined,
   }
 }
@@ -35,7 +36,7 @@ function toDb(log: DoseLog, userId: string): DbDoseLog {
     scheduled_time: log.scheduledTime,
     status: log.status,
     marked_at: log.markedAt ?? null,
-    marked_by: null,
+    marked_by: log.markedBy ?? null,
     note: log.note ?? null,
   }
 }
