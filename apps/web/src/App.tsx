@@ -1,11 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { CalendarDays, Download, Pill, Settings } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Navigate, Outlet, RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { RepositoryProvider, useRepositories } from '@/context/RepositoryContext'
 import { scheduleToday } from '@/services/notifications'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import MigrationBanner from '@/components/MigrationBanner'
 import ToastStack from '@/components/ToastStack'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import AuthPage from '@/pages/Auth'
@@ -29,6 +30,8 @@ const NAV_ITEMS = [
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
+  const [migrationDismissed, setMigrationDismissed] = useState(false)
+
   if (loading) {
     return (
       <div className="min-h-dvh bg-gray-50 flex items-center justify-center">
@@ -37,7 +40,15 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
     )
   }
   if (!user) return <Navigate to="/auth" replace />
-  return <>{children}</>
+
+  return (
+    <>
+      {!migrationDismissed && (
+        <MigrationBanner userId={user.id} onDismiss={() => setMigrationDismissed(true)} />
+      )}
+      {children}
+    </>
+  )
 }
 
 function NotificationScheduler() {
