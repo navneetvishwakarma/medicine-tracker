@@ -10,7 +10,7 @@
 
 ## 1. Problem Statement
 
-A family caretaker tracks a patient's daily medications on paper — a grid of medicine names vs dates, hand-filled with T (taken) / S (skipped) / blank (missed). This process has no reminders, no history search, is prone to loss, and can't be shared digitally with doctors or family.
+A patient manages their own daily medications on paper — a grid of medicine names vs dates, hand-filled with T (taken) / S (skipped) / blank (missed). This process has no reminders, no history search, is prone to loss, and can't be shared digitally with a doctor.
 
 ---
 
@@ -20,7 +20,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 |------|--------|
 | Replace paper tracker digitally | 100% of daily doses loggable without paper |
 | Works without internet | App fully functional in airplane mode |
-| Reduce missed doses | Caretaker receives reminder notifications per scheduled slot |
+| Reduce missed doses | Patient receives reminder notifications per scheduled slot |
 | Enable doctor-ready export | Grid export matching paper format in ≤3 taps |
 
 ## 3. Non-Goals (Phase 1)
@@ -35,11 +35,10 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 
 ## 4. Users
 
-| Persona | Description |
-|---------|-------------|
-| Primary Caretaker | Administers medication daily, marks doses taken/skipped |
-| Secondary Caretaker | Occasionally marks doses; needs to know who marked last |
-| Patient (passive) | Does not interact with app; named in records and exports |
+| Persona | Phase | Description |
+|---------|-------|-------------|
+| **Patient** | Phase 1 (primary) | Manages their own medicines, marks doses taken/skipped, receives reminders |
+| Caretaker | Phase 3 | Invited by patient; marks doses on patient's behalf; requires multi-user sync |
 
 ---
 
@@ -48,7 +47,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ### 5.1 Daily Dose Tracking
 
 **US-1.1**
-> As a caretaker, I want to see all of today's medicines organized by time slot (Morning / Noon / Evening / Night), so I know exactly what to give and when.
+> As a patient, I want to see all of today's medicines organized by time slot (Morning / Noon / Evening / Night), so I know exactly what to give and when.
 
 **Acceptance Criteria:**
 - Home screen shows current date with ← / → day navigation
@@ -59,18 +58,17 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ---
 
 **US-1.2**
-> As a caretaker, I want to tap a dose chip to mark it as taken, so I can log a dose in one interaction.
+> As a patient, I want to tap a dose chip to mark it as taken, so I can log a dose in one interaction.
 
 **Acceptance Criteria:**
 - Single tap on pending chip → taken (green ✓)
 - Single tap on taken chip → undo back to pending
-- Change persists to IndexedDB immediately
-- `markedBy` set to current active caretaker
+- Change persists to IndexedDB immediately with `markedAt` timestamp
 
 ---
 
 **US-1.3**
-> As a caretaker, I want to long-press a dose chip to mark it as skipped and optionally add a reason, so the doctor can see why a dose was missed.
+> As a patient, I want to long-press a dose chip to mark it as skipped and optionally add a reason, so the doctor can see why a dose was missed.
 
 **Acceptance Criteria:**
 - Long-press (500ms) on any chip opens a bottom sheet
@@ -81,7 +79,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ---
 
 **US-1.4**
-> As a caretaker, I want to see a banner for missed doses from previous days, so I don't lose track of gaps.
+> As a patient, I want to see a banner for missed doses from previous days, so I don't lose track of gaps.
 
 **Acceptance Criteria:**
 - On app load: if any dose from prior 7 days has `status = pending` and `scheduledDate < today`, show dismissible banner
@@ -93,7 +91,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ### 5.2 Medicine Management
 
 **US-2.1**
-> As a caretaker, I want to add a new medicine with its name, dosage, schedule, and meal relation, so the app knows when to remind me and what to log.
+> As a patient, I want to add a new medicine with its name, dosage, schedule, and meal relation, so the app knows when to remind me and what to log.
 
 **Acceptance Criteria:**
 - Form fields: name (required), dosage (required), time slots (multi-select: Morning/Noon/Evening/Night), time per slot (HH:MM picker), meal relation (Before/After/With/None), color (8 presets), notes (optional)
@@ -103,7 +101,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ---
 
 **US-2.2**
-> As a caretaker, I want to edit a medicine's details, so I can update it if the prescription changes.
+> As a patient, I want to edit a medicine's details, so I can update it if the prescription changes.
 
 **Acceptance Criteria:**
 - Edit opens same form pre-filled
@@ -113,7 +111,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ---
 
 **US-2.3**
-> As a caretaker, I want to archive (soft-delete) a medicine, so it no longer appears in daily tracking but remains in historical exports.
+> As a patient, I want to archive (soft-delete) a medicine, so it no longer appears in daily tracking but remains in historical exports.
 
 **Acceptance Criteria:**
 - Archive option in medicine list (swipe or menu)
@@ -125,7 +123,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ### 5.3 Settings
 
 **US-3.1**
-> As a caretaker, I want to set global reminder times for each slot, so all medicines in that slot fire at the same time.
+> As a patient, I want to set global reminder times for each slot, so all medicines in that slot fire at the same time.
 
 **Acceptance Criteria:**
 - Settings page: time picker per slot (Morning / Noon / Evening / Night)
@@ -135,17 +133,19 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ---
 
 **US-3.2**
-> As a caretaker, I want to set the patient name and my name, so exports and dose logs show accurate attribution.
+> As a patient, I want to set my name, so exports show accurate attribution.
 
 **Acceptance Criteria:**
-- Fields: Patient Name, Caretaker 1 Name, Caretaker 2 Name
-- "Active caretaker" toggle (who is marking now) stored in settings
-- Active caretaker name used as `markedBy` on all dose logs
+- Field: Patient Name (required, max 100 chars)
+- Name shown in export PDF/Excel header
+- Default value "Patient" on first launch
+
+> **Note:** Caretaker name and active-user toggle are Phase 3 features (multi-user sync required).
 
 ---
 
 **US-3.3**
-> As a caretaker, I want to enable/disable notifications and test them, so I can verify they work on my device before relying on them.
+> As a patient, I want to enable/disable notifications and test them, so I can verify they work on my device before relying on them.
 
 **Acceptance Criteria:**
 - Toggle: Notifications On/Off
@@ -158,7 +158,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ### 5.4 Notifications
 
 **US-4.1**
-> As a caretaker, I want to receive a browser notification at each medicine's scheduled time, so I'm reminded even if the app isn't open on screen.
+> As a patient, I want to receive a browser notification at each medicine's scheduled time, so I'm reminded even if the app isn't open on screen.
 
 **Acceptance Criteria:**
 - Notification fires within ±60 seconds of scheduled time
@@ -173,7 +173,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ### 5.5 Export
 
 **US-5.1**
-> As a caretaker, I want to export a date range as a PDF grid, so I can hand it to the doctor at an appointment.
+> As a patient, I want to export a date range as a PDF grid, so I can hand it to the doctor at an appointment.
 
 **Acceptance Criteria:**
 - Export page: date range picker (default last 7 days, max 90 days)
@@ -184,7 +184,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ---
 
 **US-5.2**
-> As a caretaker, I want to export raw dose logs to Excel, so I can filter and analyze adherence data myself.
+> As a patient, I want to export raw dose logs to Excel, so I can filter and analyze adherence data myself.
 
 **Acceptance Criteria:**
 - Excel download: two sheets
@@ -197,7 +197,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 ### 5.6 PWA / Offline
 
 **US-6.1**
-> As a caretaker, I want the app to work fully without internet, so I can use it in areas with no signal.
+> As a patient, I want the app to work fully without internet, so I can use it in areas with no signal.
 
 **Acceptance Criteria:**
 - App loads from cache when offline
@@ -206,7 +206,7 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 - No data loss when connectivity is restored
 
 **US-6.2**
-> As a caretaker, I want to install the app on my phone's home screen, so it opens like a native app.
+> As a patient, I want to install the app on my phone's home screen, so it opens like a native app.
 
 **Acceptance Criteria:**
 - Valid `manifest.webmanifest` with name, icons (192×192, 512×512), theme color
@@ -219,7 +219,8 @@ A family caretaker tracks a patient's daily medications on paper — a grid of m
 
 - Cloud sync or multi-device support → PRD 2
 - Native iOS / Android app → PRD 2
-- Biometric/PIN lock
+- Caretaker multi-user mode (`markedBy`, active-user toggle, double-dose warning) → PRD 3
+- Biometric/PIN lock → PRD 3
 - Refill reminders / stock tracking → PRD 3
 - Analytics dashboard → PRD 3
 

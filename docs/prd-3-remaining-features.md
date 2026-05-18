@@ -32,7 +32,7 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 ### 3.1 Adherence Analytics Dashboard
 
 **US-1.1**
-> As a caretaker, I want to see a weekly adherence percentage per medicine, so I can identify which drugs are most often missed.
+> As a patient, I want to see a weekly adherence percentage per medicine, so I can identify which drugs are most often missed.
 
 **Acceptance Criteria:**
 - Analytics page: default view = last 30 days
@@ -43,7 +43,7 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 ---
 
 **US-1.2**
-> As a caretaker, I want to see which time slots have the most missed doses, so I can adjust reminders or routines.
+> As a patient, I want to see which time slots have the most missed doses, so I can adjust reminders or routines.
 
 **Acceptance Criteria:**
 - Heatmap: rows = medicines, columns = days of week
@@ -53,7 +53,7 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 ---
 
 **US-1.3**
-> As a caretaker, I want to share an adherence summary with my doctor via a link, so I don't need to bring printed papers to appointments.
+> As a patient, I want to share an adherence summary with my doctor via a link, so I don't need to bring printed papers to appointments.
 
 **Acceptance Criteria:**
 - "Share with Doctor" generates a time-limited read-only link (expires in 7 days)
@@ -68,7 +68,7 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 ### 3.2 Refill Management
 
 **US-2.1**
-> As a caretaker, I want to log the current pill count for each medicine, so the app can estimate when I'll run out.
+> As a patient, I want to log the current pill count for each medicine, so the app can estimate when I'll run out.
 
 **Acceptance Criteria:**
 - Medicine form: optional "Current stock (pills)" field
@@ -78,7 +78,7 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 ---
 
 **US-2.2**
-> As a caretaker, I want a refill reminder N days before a medicine runs out, so I have time to get the prescription filled.
+> As a patient, I want a refill reminder N days before a medicine runs out, so I have time to get the prescription filled.
 
 **Acceptance Criteria:**
 - Settings: "Refill reminder lead time" (default 7 days)
@@ -89,7 +89,7 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 ---
 
 **US-2.3**
-> As a caretaker, I want to log a refill event with the new pill count, so the stock estimate resets correctly.
+> As a patient, I want to log a refill event with the new pill count, so the stock estimate resets correctly.
 
 **Acceptance Criteria:**
 - "Log Refill" action on medicine detail page
@@ -102,7 +102,7 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 ### 3.3 Complex Schedule Support
 
 **US-3.1**
-> As a caretaker, I want to add PRN (as-needed) medicines, so I can log them when administered without a fixed schedule.
+> As a patient, I want to add PRN (as-needed) medicines, so I can log them when administered without a fixed schedule.
 
 **Acceptance Criteria:**
 - New schedule type: "As needed (PRN)" — no fixed time slot
@@ -113,7 +113,7 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 ---
 
 **US-3.2**
-> As a caretaker, I want to set alternate-day or weekly schedules, so medicines that aren't taken every day are tracked correctly.
+> As a patient, I want to set alternate-day or weekly schedules, so medicines that aren't taken every day are tracked correctly.
 
 **Acceptance Criteria:**
 - Schedule builder: daily / alternate days / specific days of week / every N days
@@ -123,7 +123,7 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 ---
 
 **US-3.3**
-> As a caretaker, I want to set a tapering schedule (e.g., decreasing steroid dose), so the app automatically changes the dose over time.
+> As a patient, I want to set a tapering schedule (e.g., decreasing steroid dose), so the app automatically changes the dose over time.
 
 **Acceptance Criteria:**
 - Taper schedule: list of (start date, dosage, duration) rows
@@ -132,20 +132,44 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 
 ---
 
-### 3.4 Caregiver Safety Features
+### 3.4 Caretaker Multi-User Mode
 
-**US-4.1**
-> As a caretaker, I want the app to warn me if I try to mark a dose as taken that was already marked by another caretaker today, so we don't accidentally double-dose.
+> **Context:** Phase 1 is patient-only (single user, single device). Phase 3 adds caretaker support — a second person (family member, nurse) who can mark doses on the patient's behalf, with full attribution and conflict prevention. Requires Phase 2 sync infrastructure (Supabase).
+
+**US-4.0**
+> As a patient, I want to invite a caretaker to my tracker, so they can mark doses on my behalf when I can't.
 
 **Acceptance Criteria:**
-- If a dose is already `status = taken` and a second caretaker taps it, show confirmation: "Already marked taken by [name] at [time]. Mark taken again?"
+- Settings: "Add Caretaker" sends an invite link (expires 48h)
+- Caretaker accepts invite → sees patient's medicine list + today grid
+- Caretaker name shown in Settings as "Active caretakers"
+- Patient can revoke caretaker access at any time
+
+---
+
+**US-4.1**
+> As a patient or caretaker, I want to see who marked each dose and when, so there is a clear attribution trail.
+
+**Acceptance Criteria:**
+- Dose chip shows initials badge (e.g., "P" for patient, "C" for caretaker)
+- Hovering/tapping chip shows tooltip: "Marked taken by [name] at [time]"
+- `markedBy` stored on `DoseLog` (patient name or caretaker name)
+- Settings: "Current user" toggle (patient / caretaker) — sets `markedBy` on mutations
+
+---
+
+**US-4.2**
+> As a patient, I want the app to warn me if a dose was already marked by another person today, so we don't accidentally double-dose.
+
+**Acceptance Criteria:**
+- If `status = taken` and a different user taps again, show confirmation: "Already marked taken by [name] at [time]. Mark taken again?"
 - Requires explicit confirmation to override
 - Both markings logged in dose history (audit trail)
 
 ---
 
-**US-4.2**
-> As a caretaker, I want a PIN lock on the app, so a child or other person can't accidentally change dose records.
+**US-4.3**
+> As a patient, I want a PIN lock on the app, so another person can't accidentally change dose records.
 
 **Acceptance Criteria:**
 - Optional 4-digit PIN set in Settings
@@ -155,13 +179,13 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 
 ---
 
-**US-4.3**
-> As a caretaker, I want to see a full audit log of who changed what and when, so I can trace any discrepancies.
+**US-4.4**
+> As a patient, I want to see a full audit log of who changed what and when, so I can trace any discrepancies.
 
 **Acceptance Criteria:**
 - Audit log page (Settings → Audit Log)
-- Entries: timestamp, caretaker name, action (marked taken/skipped/edited), medicine name
-- Filterable by date range and caretaker
+- Entries: timestamp, user name, action (marked taken/skipped/edited), medicine name
+- Filterable by date range and user
 - Exportable to CSV
 
 ---
@@ -179,7 +203,7 @@ None of these are blockers for Phase 1/2. All build on the existing architecture
 ---
 
 **US-5.2**
-> As a caretaker, I want contextual tooltips on my first use of key features, so I understand what each action does.
+> As a patient, I want contextual tooltips on my first use of key features, so I understand what each action does.
 
 **Acceptance Criteria:**
 - First time on Today screen: tooltip on a DoseChip explaining tap vs long-press
@@ -211,6 +235,7 @@ All Phase 3 features build on Phase 2 infrastructure (Supabase, Expo, `packages/
 | P1 | Refill reminders | S | High |
 | P2 | Doctor share link | M | High |
 | P2 | PRN (as-needed) schedules | M | Medium |
+| P2 | Caretaker multi-user mode + markedBy | M | High |
 | P2 | Double-dose warning | S | High (safety) |
 | P3 | Alternate-day schedules | M | Medium |
 | P3 | Taper schedules | L | Low |

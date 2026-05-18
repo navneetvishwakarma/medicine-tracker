@@ -8,7 +8,9 @@
 
 ## 1. System Overview
 
-Medicine Tracker is an offline-first Progressive Web App (PWA) that helps caretakers log and track a patient's daily medication adherence. It replaces a paper-based grid tracker with a digital equivalent that works without internet, sends local reminders, and exports data to PDF/Excel.
+Medicine Tracker is an offline-first Progressive Web App (PWA) that helps patients manage and track their own daily medication adherence. It replaces a paper-based grid tracker with a digital equivalent that works without internet, sends local reminders, and exports data to PDF/Excel.
+
+Phase 1 primary user: **patient**. Caretaker multi-user support (markedBy attribution, active-user toggle, caretaker sync) is Phase 3.
 
 Phase 1 is web-only. Phase 2 adds a native mobile app via Expo, sharing business logic through a `packages/core` monorepo package.
 
@@ -107,16 +109,16 @@ interface DoseLog {
   scheduledTime: TimeSlot
   status: DoseStatus
   markedAt?: string
-  markedBy?: string            // "father" | "caretaker"
+  // markedBy: Phase 3 (caretaker multi-user sync)
   note?: string
 }
 
 interface AppSettings {
   id: 1                        // singleton row
+  patientName: string
   reminderTimes: Record<TimeSlot, string>
   notificationsEnabled: boolean
-  patientName: string
-  caretakerName: string
+  // caretakerName / activeUser: Phase 3 (multi-user sync)
 }
 ```
 
