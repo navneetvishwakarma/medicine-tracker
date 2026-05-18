@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
+import { sendTestNotification } from '@/services/notifications'
 import { TIME_SLOTS } from '@/types'
 import { useUIStore } from '@/store/useUIStore'
 
@@ -178,11 +179,11 @@ export default function Settings() {
               <button
                 type="button"
                 onClick={async () => {
-                  if (Notification.permission !== 'granted') return
-                  new Notification('Medicine Reminder', {
-                    body: 'Test notification — this is working!',
-                    icon: '/icons/icon-192.png',
-                  })
+                  if (Notification.permission !== 'granted') {
+                    addToast('Enable notifications first', 'error')
+                    return
+                  }
+                  await sendTestNotification()
                 }}
                 className="w-full py-2.5 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors"
                 style={{ fontSize: 14 }}
