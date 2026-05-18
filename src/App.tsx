@@ -4,6 +4,8 @@ import { useEffect } from 'react'
 import { NavLink, Outlet, RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { RepositoryProvider, useRepositories } from '@/context/RepositoryContext'
 import { scheduleToday } from '@/services/notifications'
+import ToastStack from '@/components/ToastStack'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import Export from '@/pages/Export'
 import Medicines from '@/pages/Medicines'
 import SettingsPage from '@/pages/Settings'
@@ -37,10 +39,16 @@ function NotificationScheduler() {
   return null
 }
 
+function OnlineStatusWatcher() {
+  useOnlineStatus()
+  return null
+}
+
 function AppLayout() {
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50">
       <NotificationScheduler />
+      <OnlineStatusWatcher />
       <div className="flex-1 overflow-y-auto pb-20">
         <Outlet />
       </div>
@@ -65,6 +73,7 @@ function AppLayout() {
           </NavLink>
         ))}
       </nav>
+      <ToastStack />
     </div>
   )
 }
