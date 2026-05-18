@@ -1,5 +1,13 @@
-# Build config is in root netlify.toml (monorepo)
-# This file is kept for local reference only
+# Root-level Netlify config for pnpm monorepo
+# Netlify auto-detects pnpm when pnpm-lock.yaml is present at root
+
+[build]
+  command = "pnpm --filter @medicine-tracker/web build"
+  publish = "apps/web/dist"
+
+# Required env vars (set in Netlify dashboard → Site settings → Environment variables):
+#   VITE_SUPABASE_URL      = https://your-project.supabase.co
+#   VITE_SUPABASE_ANON_KEY = your-anon-key
 
 # SPA fallback — all routes serve index.html
 [[redirects]]
@@ -7,6 +15,7 @@
   to = "/index.html"
   status = 200
 
+# Service worker must never be cached
 [[headers]]
   for = "/sw.js"
   [headers.values]
