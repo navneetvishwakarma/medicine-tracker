@@ -1,15 +1,29 @@
 // Supabase Edge Function — runs every 15 minutes via pg_cron / scheduled invocation
-// Finds slots due ±7 min and sends Web Push notifications to subscribed users.
+// Finds slots due ±7 min and sends Web Push (VAPID) and Expo Push notifications.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3'
 
 const WINDOW_MIN = 7
+const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
 
 function isDue(reminderTime: string, now: Date): boolean {
   const [hStr, mStr] = reminderTime.split(':')
   const slotMins = parseInt(hStr, 10) * 60 + parseInt(mStr, 10)
   const nowMins = now.getHours() * 60 + now.getMinutes()
   return nowMins >= slotMins && nowMins < slotMins + WINDOW_MIN
+}
+
+async function sendExpoPush(tokens: string[], title: string, body: string): Promise<void> {
+  const messages = tokens.map((to) => ({ to, title, body, sound: 'default' }))
+  const res = await fetch(EXPO_PUSH_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(messages),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    console.error('Expo Push API error:', text)
+  }
 }
 
 Deno.serve(async () => {
@@ -61,23 +75,39 @@ Deno.serve(async () => {
 
     const body = dueMeds.map((m: { name: string; dosage: string }) => `${m.name} ${m.dosage}`).join(', ')
     const tag = `reminder-${dueSlots.join('-')}`
+    const title = 'Medicine Reminder'
 
-    // Fetch all web push subscriptions for this user
+    // Fetch all push subscriptions for this user
     const { data: subs } = await db
       .from('push_subscriptions')
-      .select('endpoint, p256dh, auth_key')
+      .select('platform, endpoint, p256dh, auth_key, expo_token')
       .eq('user_id', row.user_id)
-      .eq('platform', 'web')
 
-    for (const sub of subs ?? []) {
+    const webSubs = (subs ?? []).filter((s) => s.platform === 'web' && s.endpoint)
+    const expoTokens = (subs ?? [])
+      .filter((s) => s.platform === 'expo' && s.expo_token)
+      .map((s) => s.expo_token as string)
+
+    // Web Push (VAPID)
+    for (const sub of webSubs) {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
-          JSON.stringify({ title: 'Medicine Reminder', body, tag }),
+          JSON.stringify({ title, body, tag }),
         )
         sent++
       } catch (err) {
-        console.error('Push send failed for endpoint', sub.endpoint, err)
+        console.error('Web Push send failed for endpoint', sub.endpoint, err)
+      }
+    }
+
+    // Expo Push
+    if (expoTokens.length > 0) {
+      try {
+        await sendExpoPush(expoTokens, title, body)
+        sent += expoTokens.length
+      } catch (err) {
+        console.error('Expo Push send failed:', err)
       }
     }
   }

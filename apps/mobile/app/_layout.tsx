@@ -9,6 +9,8 @@ import { SqliteMedicineRepository } from '@/repositories/sqlite/MedicineReposito
 import { SqliteDoseLogRepository } from '@/repositories/sqlite/DoseLogRepository'
 import { SqliteSettingsRepository } from '@/repositories/sqlite/SettingsRepository'
 import { initDb } from '@/repositories/sqlite/db'
+import { registerExpoPushToken } from '@/services/pushNotifications'
+import * as Notifications from 'expo-notifications'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: Infinity, retry: false } },
@@ -27,12 +29,25 @@ export default function RootLayout() {
 
   useEffect(() => {
     initDb().then(() => setDbReady(true))
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      if (data.session?.user) {
+        registerExpoPushToken(data.session.user.id).catch(console.warn)
+      }
+    })
     const { data: listener } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s)
       if (!s) router.replace('/auth')
     })
-    return () => listener.subscription.unsubscribe()
+
+    // Handle notification tap — navigate to Today
+    const sub = Notifications.addNotificationResponseReceivedListener(() => {
+      router.replace('/')
+    })
+    return () => {
+      listener.subscription.unsubscribe()
+      sub.remove()
+    }
   }, [router])
 
   if (!dbReady) return null

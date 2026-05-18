@@ -25,6 +25,14 @@
       [
         "expo-secure-store",
         { "faceIDPermission": "Allow Medicine Tracker to access Face ID." }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#2563eb",
+          "sounds": []
+        }
       ]
     ],
     "experiments": {
