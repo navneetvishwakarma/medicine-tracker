@@ -46,7 +46,7 @@ describe('MedicineForm', () => {
       </Wrapper>,
     )
     await user.type(screen.getByPlaceholderText(/BRILINTA/i), 'Test Med')
-    await user.type(screen.getByPlaceholderText(/90mg/i), '10mg')
+    await user.type(screen.getByRole('textbox', { name: /dosage amount/i }), '10')
     await user.click(screen.getByRole('button', { name: /add medicine/i }))
     await waitFor(() => {
       expect(screen.getByText(/at least one time slot/i)).toBeInTheDocument()
@@ -62,7 +62,7 @@ describe('MedicineForm', () => {
       </Wrapper>,
     )
     await user.type(screen.getByPlaceholderText(/BRILINTA/i), 'Aspirin')
-    await user.type(screen.getByPlaceholderText(/90mg/i), '75mg')
+    await user.type(screen.getByRole('textbox', { name: /dosage amount/i }), '75')
     // select Morning slot
     await user.click(screen.getByRole('button', { name: /^Morning$/i }))
     await user.click(screen.getByRole('button', { name: /add medicine/i }))
@@ -70,7 +70,7 @@ describe('MedicineForm', () => {
       expect(onSubmit).toHaveBeenCalledOnce()
       const [values] = onSubmit.mock.calls[0]
       expect(values.name).toBe('Aspirin')
-      expect(values.dosage).toBe('75mg')
+      expect(values.dosage).toBe('75 mg')
       expect(values.schedules).toHaveLength(1)
       expect(values.schedules[0].time).toBe('morning')
     })
@@ -106,7 +106,9 @@ describe('MedicineForm', () => {
     )
     expect(screen.getByText('Edit Medicine')).toBeInTheDocument()
     expect(screen.getByDisplayValue('BRILINTA')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('90mg')).toBeInTheDocument()
+    // amount and unit are in separate fields
+    expect(screen.getByDisplayValue('90')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('mg')).toBeInTheDocument()
   })
 
   it('closes via X button', async () => {
