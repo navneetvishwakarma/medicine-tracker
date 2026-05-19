@@ -53,7 +53,7 @@ jobs:
         working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas init --non-interactive
+        run: eas init --non-interactive --account navneets-org
 
       - name: Build Android APK (preview)
         working-directory: apps/mobile
