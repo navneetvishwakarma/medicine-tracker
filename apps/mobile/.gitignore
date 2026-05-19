@@ -1,0 +1,8 @@
+# Expo local dev cache
+.expo/
+
+# Node
+node_modules/
+
+# Build outputs
+dist/

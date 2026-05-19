@@ -1,0 +1,67 @@
+name: EAS Build — Android Preview APK
+
+on:
+  workflow_dispatch:        # manual trigger from GitHub UI
+  push:
+    branches:
+      - feature/phase-2
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/eas-build-android.yml'
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install monorepo dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Inject secrets into eas.json
+        working-directory: apps/mobile
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          jq --arg url "$SUPABASE_URL" --arg key "$SUPABASE_ANON_KEY" \
+            '.build.preview.env = {
+              "EXPO_PUBLIC_SUPABASE_URL": $url,
+              "EXPO_PUBLIC_SUPABASE_ANON_KEY": $key
+            }' eas.json > eas.json.tmp && mv eas.json.tmp eas.json
+
+      - name: Initialize EAS project
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas init --non-interactive --force
+
+      - name: Build Android APK (preview)
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build \
+            --platform android \
+            --profile preview \
+            --non-interactive \
+            --no-wait
