@@ -40,11 +40,11 @@ jobs:
         working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           eas build \
             --platform android \
             --profile preview \
             --non-interactive \
-            --no-wait
+            --no-wait \
+            --env-var EXPO_PUBLIC_SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+            --env-var EXPO_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
