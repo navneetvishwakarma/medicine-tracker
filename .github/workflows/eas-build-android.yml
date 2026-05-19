@@ -49,12 +49,6 @@ jobs:
               "EXPO_PUBLIC_SUPABASE_ANON_KEY": $key
             }' eas.json > eas.json.tmp && mv eas.json.tmp eas.json
 
-      - name: Link EAS project
-        working-directory: apps/mobile
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas init --non-interactive --account navneets-org
-
       - name: Build Android APK (preview)
         working-directory: apps/mobile
         env:
