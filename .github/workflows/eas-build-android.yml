@@ -7,6 +7,7 @@ on:
       - feature/phase-2
     paths:
       - 'apps/mobile/**'
+      - '.github/workflows/eas-build-android.yml'
 
 jobs:
   build-android:
@@ -36,6 +37,18 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Inject secrets into eas.json
+        working-directory: apps/mobile
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          jq --arg url "$SUPABASE_URL" --arg key "$SUPABASE_ANON_KEY" \
+            '.build.preview.env = {
+              "EXPO_PUBLIC_SUPABASE_URL": $url,
+              "EXPO_PUBLIC_SUPABASE_ANON_KEY": $key
+            }' eas.json > eas.json.tmp && mv eas.json.tmp eas.json
+
       - name: Build Android APK (preview)
         working-directory: apps/mobile
         env:
@@ -45,6 +58,4 @@ jobs:
             --platform android \
             --profile preview \
             --non-interactive \
-            --no-wait \
-            --env-var EXPO_PUBLIC_SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
-            --env-var EXPO_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+            --no-wait
