@@ -1,0 +1,13 @@
+# Build outputs
+build/
+.gradle/
+local.properties
+
+# Generated bundle assets
+app/src/main/assets/index.android.bundle
+app/src/main/res/drawable-*/
+app/src/main/res/raw/
+
+# Release keystore (keep debug.keystore — it's a non-sensitive dev key)
+*.jks
+release.keystore
