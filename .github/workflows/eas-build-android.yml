@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - feature/phase-2
+      - claude/fix-eas-android-build-nbNO8
     paths:
       - 'apps/mobile/**'
       - '.github/workflows/eas-build-android.yml'
