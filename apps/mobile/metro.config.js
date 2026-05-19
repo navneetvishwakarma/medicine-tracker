@@ -15,4 +15,15 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ]
 
+// Stub out optional packages that Metro can't skip via dynamic import comments
+const EMPTY_MODULE = path.resolve(__dirname, 'src/stubs/empty.js')
+const OPTIONAL_STUBS = ['@opentelemetry/api']
+
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (OPTIONAL_STUBS.includes(moduleName)) {
+    return { type: 'sourceFile', filePath: EMPTY_MODULE }
+  }
+  return context.resolveRequest(context, moduleName, platform)
+}
+
 module.exports = config
